@@ -24,10 +24,25 @@ ___
 - oled display 128x64 I2C
 
 
+** References **
+https://github.com/MhageGH/esp32_SoundRecorder
+
+
 You can find my web site at [https://www.iu1bow.it](https://www.i1bow.it)
 
 ### Changelog
 see file ["CHANGELOG.md"](docs/CHANGELOG.md)
+
+
+### Configuration
+
+ESP32 Audio Kit swithes: 
+1=on, 2=on, 3=on, 4=off, 5=off
+
+[See the reference](https://www.pschatzmann.ch/home/2021/12/06/the-ai-thinker-audio-kit-experience-or-nothing-is-right/)
+
+
+
 
 ### SCHEMA            
 xxxxxxx

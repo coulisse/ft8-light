@@ -1,73 +1,116 @@
-
 #include "AudioRecorder.hpp"
+#include <AudioKitHAL.h>  //you have to manually install it. 
+AudioKit kit;      
 
-AudioRecorder::AudioRecorder(int timer_id) {    
+AudioRecorder::AudioRecorder() {    
+    //SD Config
+    if(!SD.begin(kit.pinSpiCs())){
+        Serial.println("Card Mount Failed");
+        return;
+    } else {
+        Serial.println("Card Mount Success");
+    }
+
+    uint8_t cardType = SD.cardType();
+    if(cardType == CARD_NONE){
+      Serial.println("No SD card attached");
+      return;
+    }
+    Serial.print("SD Card Type: ");  
+    if(cardType == CARD_MMC){
+      Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+//    File root = SD.open("/");
+//    printDirectory(root, 1);
 
 };
 
-void AudioRecorder::setupI2S() {
-  Serial.println("Configuring audio I2S driver...");
-  esp_err_t err;
-  // The I2S config as per the example
-  const i2s_config_t i2s_config = { 
-      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
-      .sample_rate = samplingFrequency,                        
-      .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT, // could only get it to work with 32bits
-      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT, // although the SEL config should be left, it seems to transmit on right
-      .communication_format = I2S_COMM_FORMAT_I2S_MSB,
-      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,     // Interrupt level 1
-      .dma_buf_count = 4,                           // number of buffers
-      .dma_buf_len = SAMPLEBLOCK,                     // samples per buffer
-      .use_apll = false//,
-     // .tx_desc_auto_clear = false,
-     // .fixed_mclk = 1
-  };
-
-  err = adc_gpio_init(ADC_UNIT_1, ADC_CHANNEL_0); //step 1
-  if (err != ESP_OK) {
-    Serial.printf("Failed setting up adc channel: %d\n", err);
-    while (true);
+// Function that gets current epoch time
+unsigned long AudioRecorder::getTime() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    //Serial.println("Failed to obtain time");
+    return(0);
   }
- 
-  err = i2s_driver_install(I2S_NUM_0, &i2s_config,  0, NULL);  //step 2
-  if (err != ESP_OK) {
-    Serial.printf("Failed installing driver: %d\n", err);
-    while (true);
-  }
-
-  err = i2s_set_adc_mode(ADC_UNIT_1, ADC_INPUT);
-    if (err != ESP_OK) {
-    Serial.printf("Failed setting up adc mode: %d\n", err);
-    while (true);
-  }
-
-  Serial.println("I2S driver installed.");
+  time(&now);
+  return now;
 }
 
-
-void AudioRecorder::fetch () {
-    size_t bytesRead = 0;
-    i2s_read(I2S_PORT, 
-        (void*)samples, 
-        sizeof(samples),
-        &bytesRead,
-        portMAX_DELAY); // no timeout
-    if (bytesRead != sizeof(samples)) {
-        Serial.printf("Could only read %u bytes of %u in FillBufferI2S()\n", bytesRead, sizeof(samples));
-        // return;
-    }
-    
- /*                   
-  for (uint16_t i = 0; i < ARRAYSIZE(samples); i++) {
-    Serial.printf("%7d,",offset-samples[i]); 
-   //  signal.push_back(samples[i]); 
-  }
-  */
-
-/*
-    Serial.print(ARRAYSIZE(samples));
-    Serial.print(" - ");
-    Serial.println(signal.size());
-  */
+String AudioRecorder::record (int t) {
   
+      // open in read mode
+    LOGLEVEL_AUDIOKIT = AudioKitInfo; 
+    auto cfg = kit.defaultConfig(); 
+    cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2;
+    cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
+    cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;
+    
+  
+    kit.begin(cfg);
+
+    const int headerSize = 44;  //todo: define as global
+    byte header[headerSize]; //todo: define as global
+
+    String file_name = FILE_WAV_PREFIX+String(getTime())+FILE_WAV_SUFFIX;
+    
+    Serial.print("Start recording: ");
+    Serial.println(file_name);
+
+    File file = SD.open(file_name, FILE_WRITE);
+    if (!file) {
+      Serial.println(" Error writing wav");
+      return ""; 
+    }      
+    
+    int start_time = millis();
+    int record_time;
+    while ((record_time = (millis()-start_time)) <=t) {
+      size_t len = kit.read(buffer, BUFFER_SIZE);
+      file.write((const byte *)buffer, BUFFER_SIZE);   
+    }
+
+    file.seek(0);
+    int waveDataSize= record_time * 16000 * 16 * 2 / 8;
+    //int waveDataSize= record_time/1000 * 16000 * 16 * 2 / 8;
+    CreateWavHeader(header, waveDataSize);
+    file.write(header, headerSize);
+    file.close();  
+    Serial.println("Wav recorded");
+
+
+    return file_name;
+  
+}
+
+void AudioRecorder::play (const char file_name[]) {
+
+  // open in write  mode
+  LOGLEVEL_AUDIOKIT = AudioKitInfo; 
+
+  auto cfg = kit.defaultConfig();
+  //cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;
+  cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;
+  cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_LINE2;
+  kit.begin(cfg);  
+
+  File wavfile = SD.open(file_name);
+
+  Serial.println("Begin to play2:");
+  wavfile.seek(44);
+  char buff_file[1024];
+  while (size_t l = wavfile.readBytes (buff_file, BUFFER_SIZE)) {
+    kit.write(buff_file, l);
+  }
+  wavfile.close();
+  Serial.println("Finish");
+  //kit.end();
 }
