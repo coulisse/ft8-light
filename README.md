@@ -45,6 +45,6 @@ ESP32 Audio Kit swithes:
 
 
 ### SCHEMA            
-xxxxxxx
+xxxxxxxx
 
 
