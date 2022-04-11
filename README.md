@@ -4,6 +4,7 @@ Portable FT8
 ### Ham radio FT8 and FT4 portable companion
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://perso.crans.org/besson/LICENSE.html)
 [![made-with-c++](https://img.shields.io/badge/C++-Solutions-blue.svg?style=flat&logo=c++)](https://img.shields.io/badge/C++-Solutions-blue.svg?style=flat&logo=c++)
+[![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#alpha)
 
 
 - **Release:** v0.1
@@ -37,7 +38,7 @@ see file ["CHANGELOG.md"](docs/CHANGELOG.md)
 ### Configuration
 
 ESP32 Audio Kit swithes: 
-1=on, 2=on, 3=on, 4=off, 5=off
+1=off, 2=on, 3=on, 4=off, 5=off
 
 [See the reference](https://www.pschatzmann.ch/home/2021/12/06/the-ai-thinker-audio-kit-experience-or-nothing-is-right/)
 
@@ -45,6 +46,6 @@ ESP32 Audio Kit swithes:
 
 
 ### SCHEMA            
-xxxxxxxx
+TODO
 
 
