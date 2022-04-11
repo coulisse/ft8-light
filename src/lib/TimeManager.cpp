@@ -68,7 +68,7 @@ TimeManager::TimeManager(int timer_id) {
 
     prv_timer_id = timer_id;
     intrTimer.number=0;
-    intrTimer.raised=false;
+    intrTimer.raised=true;
  //        timer = NULL;
  //        timerMux = portMUX_INITIALIZER_UNLOCKED;
 };
