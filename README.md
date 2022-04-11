@@ -1,6 +1,8 @@
 Portable FT8
 ===
 
+THIS CODE IS NOT FUNCTIONAL: WORK IN PROGRESS! STAY TUNED!
+
 ### Ham radio FT8 and FT4 portable companion
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://perso.crans.org/besson/LICENSE.html)
 [![made-with-c++](https://img.shields.io/badge/C++-Solutions-blue.svg?style=flat&logo=c++)](https://img.shields.io/badge/C++-Solutions-blue.svg?style=flat&logo=c++)
