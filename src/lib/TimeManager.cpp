@@ -82,25 +82,30 @@ TimeManager::TimeManager(int timer_id) {
  * Init internal timer setting clock to 1 second 
  * 
 */
-void TimeManager::align_timer() {
+bool TimeManager::align_timer() {
     //connecting to wifi and get ntp time
-    setup_ntp();
+
+    if (!this->setup_ntp()) {
+        Serial.println("Could not connect to wifi");
+        return false;
+    }
+
     Serial.println("Alligning time");
     struct tm time;
     if(!getLocalTime(&time)){
         Serial.println("Could not obtain time info");
-        return;
+        return false;
     }
+
     //align to seconds
     while (time.tm_sec !=59 && time.tm_sec !=14  && time.tm_sec !=29 && time.tm_sec !=44 ) {
         delay(1000);
         if(!getLocalTime(&time)){
             Serial.println("Could not obtain time info");
-            return;
+            return false;
         }        
         Serial.print(time.tm_sec);
         Serial.print(" ");
-        //printTime();
     }
     //align to milliseconds
     while (get_time_mills() != 0) {
@@ -111,7 +116,7 @@ void TimeManager::align_timer() {
     timerAttachInterrupt(timer, methodPtrOnTimer, true);        
     timerAlarmWrite(timer, 1000000, true);
     timerAlarmEnable(timer);    
-    printTime();
+    Serial.println(printTime());
 };
 
 /**
@@ -120,28 +125,43 @@ void TimeManager::align_timer() {
  * Connect to wifi 
  * Get NTP time
  */
-void TimeManager::setup_ntp(){
+bool TimeManager::setup_ntp(){
+    byte count = 0;
+    const byte max_try = 20;
+
     WiFi.begin(ssid, password);   
     Serial.printf("Connection wifi to %s network...",ssid);
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED &&  count < max_try) {
         delay(500);
         Serial.print(".");
+        count +=1;
     }
+
     Serial.println();
-    Serial.println("Connected wifi with success");  
-    configTime(0, 3600, ntpServer);
-    printTime();
+    if (count < max_try) {
+        Serial.println("Connected wifi with success");  
+        configTime(0, 3600, ntpServer);
+        Serial.println(printTime());
+        return true;        
+    } else {
+        return false;
+    };
 };
 
 /**
  * @brief Print current time with format "hh:mm:ss.ms"
  */
-void TimeManager::printTime(){
+String TimeManager::printTime(){
     struct tm time;
     if(!getLocalTime(&time)){
         Serial.println("Could not obtain time info");
-        return;
+        return "";
     }
-    Serial.printf("time: %u:%u:%u.",time.tm_hour,time.tm_min, time.tm_sec);  
-    Serial.println(get_time_mills());
+    //Serial.printf("time: %u:%u:%u.",time.tm_hour,time.tm_min, time.tm_sec);  
+    //Serial.println(get_time_mills());
+
+    char buff[28];
+    snprintf(buff, sizeof(buff), "current time: %u:%u:%u",time.tm_hour,time.tm_min, time.tm_sec);
+    String buffAsStdStr = buff;
+    return buffAsStdStr;
 };

@@ -11,9 +11,9 @@
 
 class TimeManager  {
       public:  
-            TimeManager (int timer_id);
+            TimeManager (int timer_id=0);
             //~TimeManager();
-            void align_timer();
+            bool align_timer();
             
             struct clock {
                   int number;
@@ -22,11 +22,12 @@ class TimeManager  {
             clock getClock();
             static clock intrTimer;
             void resetClock(); 
-
+            String printTime();
+  
       private: 
             int64_t get_time_mills();
-            void setup_ntp();
-            void printTime();
+            bool setup_ntp();
             int prv_timer_id;
+
 };
 #endif

@@ -41,17 +41,6 @@ AudioRecorder::AudioRecorder() {
 
 };
 
-// Function that gets current epoch time
-unsigned long AudioRecorder::getTime() {
-  time_t now;
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
-    //Serial.println("Failed to obtain time");
-    return(0);
-  }
-  time(&now);
-  return now;
-}
 
 void AudioRecorder::begin() {
   /*
@@ -84,14 +73,13 @@ String AudioRecorder::record (int t) {
     const int headerSize = 44;  //todo: define as global
     byte header[headerSize]; //todo: define as global
 
-    String file_name = FILE_WAV_PREFIX+String(getTime())+FILE_WAV_SUFFIX;
+    String file_name = FILE_WAV_PREFIX+String(this->getTime())+FILE_WAV_SUFFIX;
     
     Serial.print("Start recording: ");
     Serial.println(file_name);
 
     File file = SD.open(file_name, FILE_WRITE);
     if (!file) {
-      Serial.println(" Error writing wav");
       return ""; 
     }      
 
@@ -152,3 +140,17 @@ void AudioRecorder::play (String file_name) {
   Serial.println("Finish");
   //kit.end();
 }
+
+// Function that gets current epoch time
+unsigned long AudioRecorder::getTime() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    //Serial.println("Failed to obtain time");
+    return(0);
+  }
+  time(&now);
+  return now;
+}
+
+
