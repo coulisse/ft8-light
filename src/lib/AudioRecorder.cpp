@@ -45,37 +45,13 @@ void AudioRecorder::begin() {
   cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
   //cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
   kit.begin(cfg);
-  i2s_set_clk(I2S_NUM_0,11025,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
+  i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
 
 }
 
 
 String AudioRecorder::record (int t) {
   
-  /*
-  auto cfg = kit.defaultConfig();    
-  cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2;
-  cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
-  cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
-  kit.begin(cfg);
-  i2s_set_clk(I2S_NUM_0,11025,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
-*/
-
-
-/*
-  Serial.println("--------");
-  Serial.println(cfg.adc_input);
-  Serial.println(cfg.bits_per_sample);
-  Serial.println(cfg.sample_rate);
-  */
-
-
-/*
-    const int headerSize = 44;  //todo: define as global
-    byte header[headerSize]; //todo: define as global
-*/
-
-    int start_funct=millis(); //todo:remove
     String file_name = FILE_WAV_PREFIX+String(this->getTime())+FILE_WAV_SUFFIX;
     
     Serial.println(file_name);
@@ -85,32 +61,19 @@ String AudioRecorder::record (int t) {
       return ""; 
     }      
 
-    //size_t bytes_wrote = 0;
     int start_time = millis();
     int record_time=0;
     while (record_time <t) {
       kit.read(buffer, BUFFER_SIZE);
       file.write(buffer, BUFFER_SIZE);   
-      //bytes_wrote += file.write(buffer, l);   
       record_time = millis()-start_time;
     }
 
     file.seek(0);
-    //int waveDataSize= record_time * 16000 * 16 * 2 / 8;
-   // int waveDataSize = record_time * 11.025 * 2;
-    //Serial.println(record_time);
-    //Serial.println(waveDataSize);
-    //Serial.println(bytes_wrote);
-    
-    //CreateWavHeader(header, bytes_wrote);
-    //CreateWavHeader(header, record_time);
-    //CreateWavHeader(header, 303616);
     CreateWavHeader(header, (t*rate/1000*2)-1);
     file.write(header, headerSize);
     file.close();  
-    
-    //Serial.print("recording time:");
-    //Serial.println(millis()-start_funct);
+ 
     return file_name;
   
 }

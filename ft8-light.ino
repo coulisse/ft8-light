@@ -50,8 +50,9 @@ void loop() {
 //  delay(1000);  
 
   TimeManager::clock tmpIntr=tm.getClock();
-  if (tmpIntr.raised) {
-    if (tmpIntr.number = 15) {
+  //Serial.printf("raised: %d, number: %d\n", tmpIntr.raised, tmpIntr.number);
+  //if (tmpIntr.raised) {
+    if (tmpIntr.number > 14) {
       //portENTER_CRITICAL(&timerMux);
       //portENTER_CRITICAL(&tm.timerMux);
       tm.resetClock();
@@ -61,7 +62,7 @@ void loop() {
       u8g2.sendBuffer();					// transfer internal memory to the display
       */
       if (phase==decode) {
-        String recorded_file = ar.record(14700);  
+        String recorded_file = ar.record(13200);  
         if (recorded_file == "") {
           Serial.println(" Error writing wav");
         }
@@ -71,7 +72,7 @@ void loop() {
       //portEXIT_CRITICAL(&tm.timerMux);
       //portEXIT_CRITICAL(&timerMux);
     } 
-  }
+  //}
     /*
     if (tmpIntr.number == 14) {
       Serial.println("decoding...");
