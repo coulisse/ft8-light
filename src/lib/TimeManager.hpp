@@ -23,11 +23,13 @@ class TimeManager  {
             static clock intrTimer;
             void resetClock(); 
             String printTime();
+            
   
       private: 
             int64_t get_time_mills();
             bool setup_ntp();
             int prv_timer_id;
+
 
 };
 #endif

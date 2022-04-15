@@ -1,7 +1,7 @@
 #include "AudioRecorder.hpp"
 #include <AudioKitHAL.h>  //you have to manually install it. 
-AudioKit kit;      
-
+AudioKit kit;  
+//auto cfg  = kit.defaultConfig(); 
 
 AudioRecorder::AudioRecorder() {    
     //SD Config
@@ -34,48 +34,50 @@ AudioRecorder::AudioRecorder() {
 
       // open in read mode
     //LOGLEVEL_AUDIOKIT = AudioKitInfo; 
-    
-
-  
-
 
 };
 
 
 void AudioRecorder::begin() {
-  /*
+  
   auto cfg = kit.defaultConfig(); 
   cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2;
   cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
-  cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
+  //cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
   kit.begin(cfg);
   i2s_set_clk(I2S_NUM_0,11025,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
-  */
+
 }
 
 
 String AudioRecorder::record (int t) {
   
-  auto cfg = kit.defaultConfig(); 
+  /*
+  auto cfg = kit.defaultConfig();    
   cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2;
   cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
   cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
   kit.begin(cfg);
   i2s_set_clk(I2S_NUM_0,11025,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
+*/
 
 
-    /*
-    kit.setVolume(8);
-    Serial.print("Volume: ");
-    Serial.println(kit.volume());    
+/*
+  Serial.println("--------");
+  Serial.println(cfg.adc_input);
+  Serial.println(cfg.bits_per_sample);
+  Serial.println(cfg.sample_rate);
   */
 
+
+/*
     const int headerSize = 44;  //todo: define as global
     byte header[headerSize]; //todo: define as global
+*/
 
+    int start_funct=millis(); //todo:remove
     String file_name = FILE_WAV_PREFIX+String(this->getTime())+FILE_WAV_SUFFIX;
     
-    Serial.print("Start recording: ");
     Serial.println(file_name);
 
     File file = SD.open(file_name, FILE_WRITE);
@@ -83,32 +85,32 @@ String AudioRecorder::record (int t) {
       return ""; 
     }      
 
-
-    int record_time;
-    size_t bytes_read = 0;
-    size_t bytes_wrote = 0;
+    //size_t bytes_wrote = 0;
     int start_time = millis();
-    while ((millis()-start_time) <t) {
-      //size_t len = kit.read(buffer, BUFFER_SIZE);
-      bytes_read += kit.read(buffer, BUFFER_SIZE);
-      //file.write((const byte *)buffer, BUFFER_SIZE);   
-      bytes_wrote += file.write(buffer, BUFFER_SIZE);   
+    int record_time=0;
+    while (record_time <t) {
+      kit.read(buffer, BUFFER_SIZE);
+      file.write(buffer, BUFFER_SIZE);   
+      //bytes_wrote += file.write(buffer, l);   
+      record_time = millis()-start_time;
     }
-    //record_time = (millis()-start_time);
-    //Serial.println(record_time);
 
-    //file.flush();
     file.seek(0);
     //int waveDataSize= record_time * 16000 * 16 * 2 / 8;
-    CreateWavHeader(header, start_time);
-    Serial.printf("bytes_read : %d\n",bytes_read);
-    Serial.printf("bytes_wrote: %d\n",bytes_wrote);
-    file.write(header, headerSize);
-    //Serial.println(String(file.size()));
-    file.close();  
-    //Serial.println("Wav recorded");
+   // int waveDataSize = record_time * 11.025 * 2;
+    //Serial.println(record_time);
+    //Serial.println(waveDataSize);
+    //Serial.println(bytes_wrote);
     
-
+    //CreateWavHeader(header, bytes_wrote);
+    //CreateWavHeader(header, record_time);
+    //CreateWavHeader(header, 303616);
+    CreateWavHeader(header, (t*rate/1000*2)-1);
+    file.write(header, headerSize);
+    file.close();  
+    
+    //Serial.print("recording time:");
+    //Serial.println(millis()-start_funct);
     return file_name;
   
 }
@@ -120,7 +122,7 @@ void AudioRecorder::play (String file_name) {
   LOGLEVEL_AUDIOKIT = AudioKitInfo; 
 
   auto cfg = kit.defaultConfig();
-  cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;
+  cfg.sample_rate = AUDIO_HAL_11K_SAMPLES;
   cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_LINE2;
   kit.begin(cfg);  
 
@@ -152,5 +154,3 @@ unsigned long AudioRecorder::getTime() {
   time(&now);
   return now;
 }
-
-

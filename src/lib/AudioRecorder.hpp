@@ -4,6 +4,7 @@
 #include <SD.h>
 #include "Wav.hpp"
 
+
 class AudioRecorder  {
     public:  
       AudioRecorder ();
@@ -23,6 +24,11 @@ class AudioRecorder  {
 
       const static int headerSize = 44;  
       byte header[headerSize]; 
+
+      const static int rate = 11025;
+      
+
+        
            
 };
 #endif
