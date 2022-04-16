@@ -14,14 +14,16 @@ ft_phase phase = decode;
 //U8G2 display config
 U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
 
-
-
 TimeManager tm;
 AudioRecorder ar;
 
 void setup() {
 
   Serial.begin(115200);
+  log_i("Total heap.: %d", ESP.getHeapSize());
+  log_i("Free heap..: %d", ESP.getFreeHeap());
+  log_i("Total PSRAM: %d", ESP.getPsramSize());
+  log_i("Free PSRAM.: %d", ESP.getFreePsram());  
 
   //Display Init
   u8g2.begin();
@@ -51,8 +53,8 @@ void loop() {
 
   TimeManager::clock tmpIntr=tm.getClock();
   //Serial.printf("raised: %d, number: %d\n", tmpIntr.raised, tmpIntr.number);
-  //if (tmpIntr.raised) {
-    if (tmpIntr.number > 14) {
+  if (tmpIntr.raised) {
+    if (tmpIntr.number % 15 == 0) {
       //portENTER_CRITICAL(&timerMux);
       //portENTER_CRITICAL(&tm.timerMux);
       tm.resetClock();
@@ -63,8 +65,9 @@ void loop() {
       */
       if (phase==decode) {
         String recorded_file = ar.record(13200);  
+         
         if (recorded_file == "") {
-          Serial.println(" Error writing wav");
+          log_e("Error writing wav");
         }
       } else if (phase == encode) {
         //ar.play("/sample_16000_16_mono.wav");
@@ -72,7 +75,7 @@ void loop() {
       //portEXIT_CRITICAL(&tm.timerMux);
       //portEXIT_CRITICAL(&timerMux);
     } 
-  //}
+  }
     /*
     if (tmpIntr.number == 14) {
       Serial.println("decoding...");

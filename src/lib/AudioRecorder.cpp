@@ -4,6 +4,7 @@ AudioKit kit;
 //auto cfg  = kit.defaultConfig(); 
 
 AudioRecorder::AudioRecorder() {    
+
     //SD Config
     if(!SD.begin(kit.pinSpiCs())){
         Serial.println("Card Mount Failed");
@@ -41,6 +42,7 @@ AudioRecorder::AudioRecorder() {
 void AudioRecorder::begin() {
   
   auto cfg = kit.defaultConfig(); 
+  LOGLEVEL_AUDIOKIT = AudioKitInfo;
   cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2;
   cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
   //cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
@@ -48,6 +50,45 @@ void AudioRecorder::begin() {
   i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
 
 }
+
+
+String AudioRecorder::record (int t) {
+  
+    String file_name = FILE_WAV_PREFIX+String(this->getTime())+FILE_WAV_SUFFIX;
+    
+    Serial.println(file_name);
+
+    File file = SD.open(file_name, FILE_WRITE);
+    if (!file) {
+      return ""; 
+    }      
+    i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
+    int start_time = millis();
+    int record_time=0;
+    uint8_t *psd_pcm_buffer = (uint8_t* )ps_malloc(1*sizeof(uint8_t));
+    int total_bytes_read =0;
+    int prev_dim = 0;
+    int current_bytes_read=0;
+    while (record_time <t) {
+      prev_dim = total_bytes_read;
+      current_bytes_read=kit.read(buffer, BUFFER_SIZE);
+      total_bytes_read += current_bytes_read;
+      ps_realloc(psd_pcm_buffer, total_bytes_read);    
+      memcpy(&psd_pcm_buffer[prev_dim],buffer,current_bytes_read);
+      record_time = millis()-start_time;
+    }
+    CreateWavHeader(header, (t*rate/1000*2)-1);
+    file.write(header, headerSize);
+    file.write(psd_pcm_buffer, total_bytes_read);         
+//    file.seek(0);
+    file.close();  
+    free(psd_pcm_buffer);
+ 
+    return file_name;
+  
+}
+
+/*
 
 
 String AudioRecorder::record (int t) {
@@ -77,6 +118,10 @@ String AudioRecorder::record (int t) {
     return file_name;
   
 }
+
+*/
+
+
 
 //void AudioRecorder::play (const char file_name[]) {
 void AudioRecorder::play (String file_name) {  

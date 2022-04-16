@@ -1,0 +1,8 @@
+#line 1 "/home/corrado/programming/arduino/ft8-light/.vscode/arduino.json"
+{
+    "configuration": "PSRAM=enabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,DebugLevel=5",
+    "board": "esp32:esp32:esp32",
+    "port": "/dev/ttyUSB1",
+    "sketch": "ft8-light.ino",
+    "output": "./build"
+}

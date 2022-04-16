@@ -16,7 +16,7 @@ class AudioRecorder  {
       
     private: 
       unsigned long getTime();
-      static const int BUFFER_SIZE = 512;
+      static const int BUFFER_SIZE = 2048;
       uint8_t buffer[BUFFER_SIZE];
 
       const String FILE_WAV_PREFIX = "/portable_ft8-";
