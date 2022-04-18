@@ -7,27 +7,18 @@ AudioRecorder::AudioRecorder() {
 
     //SD Config
     if(!SD.begin(kit.pinSpiCs())){
-        Serial.println("Card Mount Failed");
+        log_e("Card Mount Failed");
         return;
     } else {
-        Serial.println("Card Mount Success");
+        log_i("Card Mount Success");
     }
 
     uint8_t cardType = SD.cardType();
     if(cardType == CARD_NONE){
-      Serial.println("No SD card attached");
+      log_e("No SD card attached");
       return;
     }
-    Serial.print("SD Card Type: ");  
-    if(cardType == CARD_MMC){
-      Serial.println("MMC");
-    } else if(cardType == CARD_SD){
-      Serial.println("SDSC");
-    } else if(cardType == CARD_SDHC){
-      Serial.println("SDHC");
-    } else {
-      Serial.println("UNKNOWN");
-    }
+
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
     Serial.printf("SD Card Size: %lluMB\n", cardSize);
 //    File root = SD.open("/");
@@ -35,6 +26,9 @@ AudioRecorder::AudioRecorder() {
 
       // open in read mode
     //LOGLEVEL_AUDIOKIT = AudioKitInfo; 
+
+    SD.rmdir("/recording");
+    SD.mkdir("/recording");
 
 };
 
@@ -47,10 +41,63 @@ void AudioRecorder::begin() {
   cfg.bits_per_sample =  AUDIO_HAL_BIT_LENGTH_16BITS;
   //cfg.sample_rate = AUDIO_HAL_16K_SAMPLES;  
   kit.begin(cfg);
-  i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
+  //i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
 
 }
 
+AudioRecorder::record_t  AudioRecorder::record (int t) {
+  
+  
+  //String file_name = FILE_WAV_PREFIX+String(this->getTime())+FILE_WAV_SUFFIX;
+  log_d("recording");
+  i2s_set_clk(I2S_NUM_0,this->rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
+  int start_time = millis();
+  int record_time=0;
+  uint8_t *psd_pcm_buffer = (uint8_t* )ps_malloc(1*sizeof(uint8_t));
+  int total_bytes_read =0;
+  int prev_dim = 0;
+  int current_bytes_read=0;
+  while (record_time <t) {
+    prev_dim = total_bytes_read;
+    current_bytes_read=kit.read(buffer, BUFFER_SIZE);
+    total_bytes_read += current_bytes_read;
+    ps_realloc(psd_pcm_buffer, total_bytes_read);    
+    memcpy(&psd_pcm_buffer[prev_dim],buffer,current_bytes_read);
+    record_time = millis()-start_time;
+  }
+
+  /*
+  Serial.print("Audio: ");
+  for (int i=0; i<100; i++ ) {
+    Serial.write(psd_pcm_buffer[i]);
+  }
+  Serial.println();
+  */
+  record_t data;
+  data.bytes_read = total_bytes_read;
+  data.recording_time = t;
+  data.rate=this->rate;
+  data.pcm_buffer  = psd_pcm_buffer;
+
+/*
+  String file_name=FILE_WAV_PREFIX+this->getTime()+FILE_WAV_SUFFIX;
+  Serial.println(file_name);   
+
+  CreateWavHeader(header, (t*rate/1000*2)-1);
+  File file = SD.open(file_name, FILE_WRITE);
+  if (!file) {
+    return data; 
+  }    
+  file.write(header, headerSize);
+  file.write(psd_pcm_buffer, total_bytes_read);         
+  file.close();  
+  */
+//  free(psd_pcm_buffer);
+
+  return data; 
+  
+}
+/*
 
 String AudioRecorder::record (int t) {
   
@@ -88,6 +135,7 @@ String AudioRecorder::record (int t) {
   
 }
 
+*/
 /*
 
 

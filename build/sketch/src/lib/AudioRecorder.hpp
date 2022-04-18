@@ -6,18 +6,22 @@
 #include "Wav.hpp"
 
 
+
 class AudioRecorder  {
+  enum status_t {recording, ready, disable, error};
+
     public:  
       AudioRecorder ();
       //~AudioRecorder ();
-      String record (int t);
+      void record (int t);
       //void play (const char file_name[]);
       void play (String file_name);
       void begin ();
-      
+      //status_t get_status();
+      static status_t status;
     private: 
       unsigned long getTime();
-      static const int BUFFER_SIZE = 512;
+      static const int BUFFER_SIZE = 4096;
       uint8_t buffer[BUFFER_SIZE];
 
       const String FILE_WAV_PREFIX = "/portable_ft8-";
@@ -28,6 +32,8 @@ class AudioRecorder  {
 
       const static int rate = 11025;
       
+      
+      //void set_status(status_t status);    
 
         
            

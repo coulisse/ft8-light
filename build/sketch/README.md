@@ -52,3 +52,4 @@ ESP32 Audio Kit swithes:
 TODO
 
 
+LOG: on Arduino ide : tool -> core_debug_level

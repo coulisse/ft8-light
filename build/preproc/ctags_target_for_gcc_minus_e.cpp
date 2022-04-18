@@ -15,15 +15,15 @@ ft_phase phase = decode;
 //U8G2 display config
 U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2((&u8g2_cb_r0), /* clock=*/ 18, /* data=*/ 23, /* reset=*/ 255); // Adafruit Feather M0 Basic Proto + FeatherWing OLED
 
-
-
 TimeManager tm;
 AudioRecorder ar;
+
+
+TaskHandle_t Task_ar;
 
 void setup() {
 
   Serial.begin(115200);
-
   ;
   ;
   ;
@@ -42,7 +42,7 @@ void setup() {
 
   //objects init
   if (!tm.align_timer()){
-    Serial.println("initialization failed");
+    ;
     while (true){
       //stop here
     }
@@ -51,14 +51,27 @@ void setup() {
 }
 
 
+void Task1code(void * parameters) {
+
+  ;
+  ar.record(13200);
+  ;
+  vTaskDelete(
+# 58 "/home/corrado/programming/arduino/ft8-light/ft8-light.ino" 3 4
+             __null
+# 58 "/home/corrado/programming/arduino/ft8-light/ft8-light.ino"
+                 );
+}
+
+
+
 void loop() {
 //https://www.appsloveworld.com/download-sample-wav-file-for-testing/
 //  delay(1000);  
-
   TimeManager::clock tmpIntr=tm.getClock();
   //Serial.printf("raised: %d, number: %d\n", tmpIntr.raised, tmpIntr.number);
   if (tmpIntr.raised) {
-    if (tmpIntr.number > 14) {
+    if (tmpIntr.number % 15 == 0) {
       //portENTER_CRITICAL(&timerMux);
       //portENTER_CRITICAL(&tm.timerMux);
       tm.resetClock();
@@ -68,12 +81,28 @@ void loop() {
       u8g2.sendBuffer();					// transfer internal memory to the display
       */
       if (phase==decode) {
-        String recorded_file = ar.record(13200);
-        Serial.print ("Recorded file:");
-        Serial.println(recorded_file);
+        //String recorded_file = ar.record(13200);  
+        //uint8_t * pcm_buffer = ar.record(13200);  
+
+        xTaskCreatePinnedToCore(Task1code,"Task1",10000,
+# 82 "/home/corrado/programming/arduino/ft8-light/ft8-light.ino" 3 4
+                                                       __null
+# 82 "/home/corrado/programming/arduino/ft8-light/ft8-light.ino"
+                                                           ,1,
+# 82 "/home/corrado/programming/arduino/ft8-light/ft8-light.ino" 3 4
+                                                              __null
+# 82 "/home/corrado/programming/arduino/ft8-light/ft8-light.ino"
+                                                                  ,0);
+        //delay(100);
+        //xTaskCreatePinnedToCore(Task2code,"Task2",10000,NULL,2,NULL,0); 
+
+        //TODO: creare copia della ram, altrimenti si sovrascrive?!
+
+         /*
         if (recorded_file == "") {
-          Serial.println(" Error writing wav");
+          log_e("Error writing wav");
         }
+        */
       } else if (phase == encode) {
         //ar.play("/sample_16000_16_mono.wav");
       }

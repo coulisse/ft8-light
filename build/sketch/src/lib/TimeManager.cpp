@@ -87,14 +87,14 @@ bool TimeManager::align_timer() {
     //connecting to wifi and get ntp time
 
     if (!this->setup_ntp()) {
-        Serial.println("Could not connect to wifi");
+        log_e("Could not connect to wifi");
         return false;
     }
 
     Serial.println("Alligning time");
     struct tm time;
     if(!getLocalTime(&time)){
-        Serial.println("Could not obtain time info");
+        log_e("Could not obtain time info");
         return false;
     }
 
@@ -102,7 +102,7 @@ bool TimeManager::align_timer() {
     while (time.tm_sec !=59 && time.tm_sec !=14  && time.tm_sec !=29 && time.tm_sec !=44 ) {
         delay(1000);
         if(!getLocalTime(&time)){
-            Serial.println("Could not obtain time info");
+            log_e("Could not obtain time info");            
             return false;
         }        
         Serial.print(time.tm_sec);
@@ -117,7 +117,6 @@ bool TimeManager::align_timer() {
     timerAttachInterrupt(timer, methodPtrOnTimer, true);        
     timerAlarmWrite(timer, 1000000, true);
     timerAlarmEnable(timer);    
-    Serial.println(printTime());
 };
 
 /**
@@ -131,7 +130,7 @@ bool TimeManager::setup_ntp(){
     const byte max_try = 20;
 
     WiFi.begin(ssid, password);   
-    Serial.printf("Connection wifi to %s network...",ssid);
+    log_i("Connection wifi to %s network...",ssid);
     while (WiFi.status() != WL_CONNECTED &&  count < max_try) {
         delay(500);
         Serial.print(".");
@@ -140,7 +139,7 @@ bool TimeManager::setup_ntp(){
 
     Serial.println();
     if (count < max_try) {
-        Serial.println("Connected wifi with success");  
+        log_i("Connected wifi with success");  
         configTime(0, 3600, ntpServer);
         Serial.println(printTime());
         return true;        
@@ -155,7 +154,7 @@ bool TimeManager::setup_ntp(){
 String TimeManager::printTime(){
     struct tm time;
     if(!getLocalTime(&time)){
-        Serial.println("Could not obtain time info");
+        log_e("Could not obtain time info");
         return "";
     }
     //Serial.printf("time: %u:%u:%u.",time.tm_hour,time.tm_min, time.tm_sec);  
