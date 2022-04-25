@@ -187,5 +187,4 @@
  /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/cores/esp32/Server.h \
  /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/WiFi/src/WiFiUdp.h \
  /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/cores/esp32/Udp.h \
- /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/cores/esp32/cbuf.h \
- /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/config.h
+ /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/cores/esp32/cbuf.h

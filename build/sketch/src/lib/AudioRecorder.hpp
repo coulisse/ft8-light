@@ -8,28 +8,25 @@
 
 
 class AudioRecorder  {
-  enum status_t {recording, ready, disable, error};
-
+  
     public:  
+      struct record_t {
+        size_t bytes_read;
+        int recording_time;
+        int rate;
+        uint8_t * pcm_buffer;
+      } record_data_t;
       AudioRecorder ();
       //~AudioRecorder ();
-      void record (int t);
+      record_t record (int t);
       //void play (const char file_name[]);
       void play (String file_name);
       void begin ();
-      //status_t get_status();
-      static status_t status;
+
     private: 
       unsigned long getTime();
       static const int BUFFER_SIZE = 4096;
       uint8_t buffer[BUFFER_SIZE];
-
-      const String FILE_WAV_PREFIX = "/portable_ft8-";
-      const String FILE_WAV_SUFFIX = ".wav";    
-
-      const static int headerSize = 44;  
-      byte header[headerSize]; 
-
       const static int rate = 11025;
       
       

@@ -28,6 +28,9 @@ AudioRecorder::AudioRecorder() {
       // open in read mode
     //LOGLEVEL_AUDIOKIT = AudioKitInfo; 
 
+    SD.rmdir("/recording");
+    SD.mkdir("/recording");
+
 };
 
 
@@ -42,30 +45,13 @@ void AudioRecorder::begin() {
   //i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
 
 }
-/*
-void AudioRecorder::set_status(status_t sts) {
-  this->status = sts;
-}
 
-AudioRecorder::status_t AudioRecorder::get_status() {
-
-  status_t ret = this-> status;
-  if (this->status = ready) {
-    this->set_status(disable);
-  }
-
-  return ret;
-}
-*/
-void  AudioRecorder::record (int t) {
-  //this->set_status(recording);
-  //status = recording;
+AudioRecorder::record_t  AudioRecorder::record (int t) {
+  
   
   //String file_name = FILE_WAV_PREFIX+String(this->getTime())+FILE_WAV_SUFFIX;
-  String file_name=FILE_WAV_PREFIX+this->getTime()+FILE_WAV_SUFFIX;
-  Serial.println(file_name);   
-
-  i2s_set_clk(I2S_NUM_0,rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
+  log_d("recording");
+  i2s_set_clk(I2S_NUM_0,this->rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
   int start_time = millis();
   int record_time=0;
   uint8_t *psd_pcm_buffer = (uint8_t* )ps_malloc(1*sizeof(uint8_t));
@@ -81,22 +67,35 @@ void  AudioRecorder::record (int t) {
     record_time = millis()-start_time;
   }
 
-  //this->set_status(ready);
-  //status = ready;
+  /*
+  Serial.print("Audio: ");
+  for (int i=0; i<100; i++ ) {
+    Serial.write(psd_pcm_buffer[i]);
+  }
+  Serial.println();
+  */
+  record_t data;
+  data.bytes_read = total_bytes_read;
+  data.recording_time = t;
+  data.rate=this->rate;
+  data.pcm_buffer  = psd_pcm_buffer;
+
+/*
+  String file_name=FILE_WAV_PREFIX+this->getTime()+FILE_WAV_SUFFIX;
+  Serial.println(file_name);   
+
   CreateWavHeader(header, (t*rate/1000*2)-1);
   File file = SD.open(file_name, FILE_WRITE);
   if (!file) {
-    //this->set_status(error);
-    return; 
+    return data; 
   }    
   file.write(header, headerSize);
   file.write(psd_pcm_buffer, total_bytes_read);         
   file.close();  
-  free(psd_pcm_buffer);
-  file.close();
- // this->set_status(disable);
+  */
+//  free(psd_pcm_buffer);
 
-  return;
+  return data; 
   
 }
 /*

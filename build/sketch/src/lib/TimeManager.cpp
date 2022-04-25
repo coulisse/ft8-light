@@ -6,7 +6,6 @@
  */
 #include "TimeManager.hpp"
 #include <WiFi.h>
-#include "config.h"
 
 // TIMER
 hw_timer_t * timer = NULL;
@@ -65,11 +64,15 @@ int64_t TimeManager::get_time_mills() {
 /**
  * @brief class constructor
   */
-TimeManager::TimeManager(int timer_id) {    
-
-    prv_timer_id = timer_id;
+TimeManager::TimeManager(char* id, char* pwd, char* ntpSrv, int timer_id) {    
+    
     intrTimer.number=0;
     intrTimer.raised=true;
+    prv_timer_id = timer_id;
+    this->ssid = id;
+    this->password = pwd;
+    this->ntpServer=ntpSrv;
+    
  //        timer = NULL;
  //        timerMux = portMUX_INITIALIZER_UNLOCKED;
 };

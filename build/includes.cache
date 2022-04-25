@@ -65,6 +65,61 @@
     "Includepath": null
   },
   {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/common/wave.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/fft/kiss_fft.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/fft/kiss_fftr.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/constants.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/crc.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/decode.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/encode.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/ldpc.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/pack.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/text.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/unpack.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
     "Sourcefile": "/home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/Wire/src/Wire.cpp",
     "Include": "",
     "Includepath": null

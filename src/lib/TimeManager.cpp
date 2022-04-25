@@ -93,7 +93,7 @@ bool TimeManager::align_timer() {
         return false;
     }
 
-    Serial.println("Alligning time");
+    Serial.print("Alligning time: ");
     struct tm time;
     if(!getLocalTime(&time)){
         log_e("Could not obtain time info");

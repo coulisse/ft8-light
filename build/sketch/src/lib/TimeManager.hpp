@@ -12,7 +12,7 @@
 
 class TimeManager  {
       public:  
-            TimeManager (int timer_id=0);
+            TimeManager (char* id, char* pwd, char* ntpServer, int timer_id=0);
             //~TimeManager();
             bool align_timer();
             
@@ -30,7 +30,9 @@ class TimeManager  {
             int64_t get_time_mills();
             bool setup_ntp();
             int prv_timer_id;
-
+            char* ssid;
+            char* password;
+            char* ntpServer;
 
 };
 #endif

@@ -147,4 +147,18 @@
  /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/SPI/src/SPI.h \
  /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/cores/esp32/esp32-hal-spi.h \
  /home/corrado/.arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/SD/src/sd_defines.h \
- /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/Wav.hpp
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/Wav.hpp \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/config.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/unpack.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/ldpc.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/decode.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/constants.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/constants.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/encode.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/ft8/crc.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/common/common.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/common/wave.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/common/debug.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/fft/kiss_fftr.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/src/lib/ft8_lib/fft/kiss_fft.h \
+ /home/corrado/programming/arduino/ft8-light/build/sketch/monitor_struct.h
