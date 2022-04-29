@@ -15,3 +15,12 @@ for (int idx = 0; idx < num_candidates; ++idx) --> for (int idx = 0; idx < num_c
 
 kiss_fft_cpx freqdata[me->nfft / 2 + 1]; --> kiss_fft_cpx freqdata[me->nfft 0.5f + 1];
     
+
+
+
+typedef struct
+{
+    // TODO: check again that this size is enough
+    char text[25]; ///< Plain text
+    uint16_t hash; ///< Hash value to be used in hash table and quick checking for duplicates   --> uint8_t hash
+} message_t;
