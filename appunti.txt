@@ -24,3 +24,9 @@ typedef struct
     char text[25]; ///< Plain text
     uint16_t hash; ///< Hash value to be used in hash table and quick checking for duplicates   --> uint8_t hash
 } message_t;
+
+
+int num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score); --> uint8_t num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
+
+
+    for (int idx = 0; idx < num_candidates; ++idx) -->     for (uint8_t idx = 0; idx < num_candidates; ++idx)
