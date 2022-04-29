@@ -1,0 +1,3 @@
+IRAM_ATTR per hann_i
+signal[i]=raw_data/ 32768.0f; -->  signal[i]=raw_data * (1.0f / 32768.0f);
+
