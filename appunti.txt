@@ -35,3 +35,6 @@ int num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMi
 
 
 remove:   int snr = 0; // TODO: compute SNR
+
+
+https://physics.princeton.edu/pulsar/k1jt/FT4_FT8_QEX.pdf
