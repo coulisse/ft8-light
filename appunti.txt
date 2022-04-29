@@ -29,4 +29,6 @@ typedef struct
 int num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score); --> uint8_t num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
 
 
-    for (int idx = 0; idx < num_candidates; ++idx) -->     for (uint8_t idx = 0; idx < num_candidates; ++idx)
+ for (int idx = 0; idx < num_candidates; ++idx) -->     for (uint8_t idx = 0; idx < num_candidates; ++idx)
+ 
+ std::list::unique 
