@@ -1,3 +1,15 @@
 IRAM_ATTR per hann_i
 signal[i]=raw_data/ 32768.0f; -->  signal[i]=raw_data * (1.0f / 32768.0f);
 
+message_t* decoded_hashtable[kMax_decoded_messages]; --> message_t* decoded_hashtable[kMax_decoded_messages] = {};
+
+remove:     // Initialize hash table pointers
+    for (int i = 0; i < kMax_decoded_messages; ++i)
+    {
+        decoded_hashtable[i] = NULL;
+    }
+    
+    
+    
+for (int idx = 0; idx < num_candidates; ++idx) --> for (int idx = 0; idx < num_candidates * 0.75f ; ++idx)
+    
