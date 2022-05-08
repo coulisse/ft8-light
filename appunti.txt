@@ -1,0 +1,40 @@
+IRAM_ATTR per hann_i
+signal[i]=raw_data/ 32768.0f; -->  signal[i]=raw_data * (1.0f / 32768.0f);
+
+message_t* decoded_hashtable[kMax_decoded_messages]; --> message_t* decoded_hashtable[kMax_decoded_messages] = {};
+
+remove:     // Initialize hash table pointers
+    for (int i = 0; i < kMax_decoded_messages; ++i)
+    {
+        decoded_hashtable[i] = NULL;
+    }
+    
+    
+    
+for (int idx = 0; idx < num_candidates; ++idx) --> for (int idx = 0; idx < num_candidates * 0.75f ; ++idx)
+
+kiss_fft_cpx freqdata[me->nfft / 2 + 1]; --> kiss_fft_cpx freqdata[me->nfft 0.5f + 1];
+    
+
+
+
+typedef struct
+{
+    // TODO: check again that this size is enough
+    char text[25]; ///< Plain text
+    uint16_t hash; ///< Hash value to be used in hash table and quick checking for duplicates   --> uint8_t hash
+} message_t;
+
+
+int num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score); --> uint8_t num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
+
+
+ for (int idx = 0; idx < num_candidates; ++idx) -->     for (uint8_t idx = 0; idx < num_candidates; ++idx)
+ 
+ std::list::unique 
+
+
+remove:   int snr = 0; // TODO: compute SNR
+
+
+https://physics.princeton.edu/pulsar/k1jt/FT4_FT8_QEX.pdf
