@@ -45,7 +45,7 @@ void AudioRecorder::begin() {
 
 }
 
-void  AudioRecorder::record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read) {
+void  AudioRecorder::record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read, EventGroupHandle_t xEventGroup, EventBits_t TSK_DECODE_BIT) {
   log_v("a0") ;
    //TODO: return data without buffer
   i2s_set_clk(I2S_NUM_0,this->rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
@@ -79,6 +79,10 @@ void  AudioRecorder::record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &rec
   rate=this->rate;
   recording_time=record_time;
   bytes_read=total_bytes_read;
+
+  log_v("setting bit for decoding...");
+  xEventGroupSetBits(xEventGroup,TSK_DECODE_BIT); //Event,bit
+
 
   return; 
   

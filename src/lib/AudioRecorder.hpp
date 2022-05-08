@@ -12,7 +12,8 @@ class AudioRecorder  {
 
       AudioRecorder ();
       //~AudioRecorder ();
-      void record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read);
+      //void record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read);
+      void record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read, EventGroupHandle_t xEventGroup, EventBits_t TSK_DECODE_BIT);
       //void play (const char file_name[]);
       void play (String file_name);
       void begin ();

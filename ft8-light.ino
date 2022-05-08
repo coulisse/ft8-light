@@ -390,7 +390,7 @@ AudioRecorder ar;
 /* definitions for task management */
 TaskHandle_t xHandleRecord;
 TaskHandle_t xHandleDecode;
-#define TASKRECORD_BIT (1UL<<0UL) //Unsigned long bit0 set to 1
+#define TSK_DECODE_BIT (1UL<<0UL) //Unsigned long bit0 set to 1
 EventGroupHandle_t xEventGroup;
 shared_data data;
 
@@ -449,12 +449,14 @@ void tsk_record(void * parameters) {
         //ps_realloc(data->pcm_buffer,1*sizeof(uint8_t));
         
         log_v("recording..");
-        ar.record(RECORDING_TIME,(uint8_t*&) data->pcm_buffer,data->rate,data->recording_time,data->bytes_read);
+        ar.record(RECORDING_TIME,(uint8_t*&) data->pcm_buffer,data->rate,data->recording_time,data->bytes_read,xEventGroup,TSK_DECODE_BIT);
         //ar.record(RECORDING_TIME,(uint8_t*&) parameters,r,rt,br);
         log_v("rate %d, recording time %d, bytes read %d", data->rate,data->recording_time,data->bytes_read);
     //    vTaskDelete(NULL);
+/*
         log_v("setting bit for decoding...");
-        xEventGroupSetBits(xEventGroup,TASKRECORD_BIT); //Event,bit
+        xEventGroupSetBits(xEventGroup,TSK_DECODE_BIT); //Event,bit
+  */      
         log_v("Suspending recording task..."); 
         vTaskSuspend(NULL);
 
@@ -466,12 +468,13 @@ void tsk_record(void * parameters) {
 
 void tsk_decode(void * parameters) {  
 
-    const EventBits_t xBitsToWaitFor = TASKRECORD_BIT;
+    const EventBits_t xBitsToWaitFor = TSK_DECODE_BIT;
     EventBits_t xEventGroupValue;
 
     for (;;) {
         xEventGroupValue = xEventGroupWaitBits(xEventGroup,xBitsToWaitFor,pdTRUE,pdTRUE,portMAX_DELAY);//EventGroup,receive, clear on exit, all bits?,wait
-        if(xEventGroupValue & TASKRECORD_BIT != 0) {        
+        if(xEventGroupValue & TSK_DECODE_BIT != 0) {
+            xEventGroupClearBits(xEventGroup,xBitsToWaitFor);        
             //get parameters
             shared_data * data = (shared_data* ) parameters;
 
