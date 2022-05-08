@@ -28,17 +28,25 @@
 
 #define LOG_LEVEL LOG_INFO
 
+struct shared_data {
+    size_t bytes_read;
+    int recording_time;
+    int rate;
+    uint8_t ** pcm_buffer;
+} shared_data_t;
+
+
 const int kMin_score = 10; // Minimum sync score threshold for candidates
 const int kMax_candidates = 120;
 const int kLDPC_iterations = 20;
 
-const int kMax_decoded_messages = 50;
+const uint8_t kMax_decoded_messages = 50;
 
-const int kFreq_osr = 2; // Frequency oversampling rate (bin subdivision)
-const int kTime_osr = 2; // Time oversampling rate (symbol subdivision)
+const uint8_t kFreq_osr = 2; // Frequency oversampling rate (bin subdivision)
+const uint8_t kTime_osr = 2; // Time oversampling rate (symbol subdivision)
 
 
-static float hann_i(int i, int N)
+static float IRAM_ATTR hann_i(int i, int N)
 {
     float x = sinf((float)M_PI * i / N);
     return x * x;
@@ -66,7 +74,7 @@ static float blackman_i(int i, int N)
     return a0 - a1 * x1 + a2 * x2;
 }
 
-void waterfall_init(waterfall_t* me, int max_blocks, int num_bins, int time_osr, int freq_osr)
+void waterfall_init(waterfall_t* me, int max_blocks, int num_bins, uint8_t time_osr, uint8_t freq_osr)
 {
     size_t mag_size = max_blocks * time_osr * freq_osr * num_bins * sizeof(me->mag[0]);
     me->max_blocks = max_blocks;
@@ -77,11 +85,11 @@ void waterfall_init(waterfall_t* me, int max_blocks, int num_bins, int time_osr,
     me->block_stride = (time_osr * freq_osr * num_bins);
     log_v("Number of element in mag: %d", mag_size/sizeof(uint8_t));
     log_v("allocating local mag");
-    //TODO: velocizzare in un solo passaggio, senza loc_mag
-    uint8_t *loc_mag = (uint8_t* )ps_malloc(mag_size);    
-    log_v("assign local mag to structure");
-    me->mag = loc_mag;
-     log_d("Waterfall size = %zu", mag_size);
+    //uint8_t *loc_mag = (uint8_t* )ps_malloc(mag_size);    
+    me->mag = (uint8_t* )ps_malloc(mag_size);  
+    //log_v("assign local mag to structure");
+    //me->mag = loc_mag;
+    log_d("Waterfall size = %zu", mag_size);
     log_v("Free PSRAM.: %d", ESP.getFreePsram());
 }
 
@@ -204,9 +212,8 @@ void monitor_reset(monitor_t* me)
 }
 
 
-
 //int decode_ft8(char* wav_path)
-int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
+int IRAM_ATTR decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
 {
     
     log_v("entered in decoding");
@@ -222,7 +229,8 @@ int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
     float *signal = (float* )ps_malloc(num_samples*sizeof(float));
     for (int i=0;i<num_samples;i++){
       raw_data =  pcm_buffer[j] | pcm_buffer[j+1] << 8;
-      signal[i]=raw_data/ 32768.0f;
+      //signal[i]=raw_data/ 32768.0f;
+      signal[i]=raw_data * (1.0f / 32768.0f);
       j+=2;
     };
     log_v("Free PSRAM.: %d", ESP.getFreePsram());
@@ -256,11 +264,13 @@ int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
     
     // Find top candidates by Costas sync score and localize them in time and frequency
     candidate_t candidate_list[kMax_candidates];
-    int num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
+    uint8_t num_candidates = (uint8_t) ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
 
     // Hash table for decoded messages (to check for duplicates)
-    int num_decoded = 0;
+    uint8_t num_decoded = 0;
     message_t decoded[kMax_decoded_messages];
+
+    /*
     message_t* decoded_hashtable[kMax_decoded_messages];
 
     // Initialize hash table pointers
@@ -268,9 +278,12 @@ int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
     {
         decoded_hashtable[i] = NULL;
     }
+    */
 
+    message_t* decoded_hashtable[kMax_decoded_messages] = {};
     // Go over candidates and attempt to decode messages
-    for (int idx = 0; idx < num_candidates; ++idx)
+    log_i("Number of candidates: %d", num_candidates);
+    for (uint8_t idx = 0; idx < num_candidates; ++idx)
     {
         vTaskDelay(1);
         const candidate_t* cand = &candidate_list[idx];
@@ -282,6 +295,8 @@ int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
 
         message_t message;
         decode_status_t status;
+        ft8_decode(&mon.wf, cand, &message, kLDPC_iterations, &status);
+        /*
         if (!ft8_decode(&mon.wf, cand, &message, kLDPC_iterations, &status))
         {
             
@@ -300,9 +315,11 @@ int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
             }
             continue;
         }
+        */
         
-        log_d( "Checking hash table for %4.1fs / %4.1fHz [%d]...", time_sec, freq_hz, cand->score);
-        int idx_hash = message.hash % kMax_decoded_messages;
+         log_d( "Checking hash table for %4.1fs / %4.1fHz [%d]...", time_sec, freq_hz, cand->score);
+        uint8_t idx_hash = message.hash % kMax_decoded_messages;
+        
         bool found_empty_slot = false;
         bool found_duplicate = false;
         do
@@ -327,18 +344,20 @@ int decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
 
         if (found_empty_slot)
         {
+            
+        
             // Fill the empty hashtable slot
             memcpy(&decoded[idx_hash], &message, sizeof(message));
             decoded_hashtable[idx_hash] = &decoded[idx_hash];
             ++num_decoded;
 
             // Fake WSJT-X-like output for now
-            int snr = 0; // TODO: compute SNR
+            //int snr = 0; // TODO: compute SNR
             //printf("000000 %3d %+4.2f %4.0f ~  %s\n", cand->score, time_sec, freq_hz, message.text);
             log_i("000000 %3d %+4.2f %4.0f ~  %s", cand->score, time_sec, freq_hz, message.text);
         }
     }
-    log_i("Decoded %d messages", num_decoded);
+    log_i("decoded %d messages", num_decoded);
 
     monitor_free(&mon);
     free(signal);
@@ -368,10 +387,17 @@ TimeManager tm(ssid,password,ntpServer);
 
 AudioRecorder ar;
 
-TaskHandle_t Task_ar;  //todo: remove task
-
+/* definitions for task management */
+TaskHandle_t xHandleRecord;
+TaskHandle_t xHandleDecode;
+#define TASKRECORD_BIT (1UL<<0UL) //Unsigned long bit0 set to 1
+EventGroupHandle_t xEventGroup;
+shared_data data;
 
 void setup() {
+
+    //data.pcm_buffer = (uint8_t** )ps_malloc(1*sizeof(uint8_t));
+  data.pcm_buffer = (uint8_t** )ps_malloc(400000*sizeof(uint8_t));
 
   Serial.begin(115200);
   log_v("Total heap.: %d", ESP.getHeapSize());
@@ -385,7 +411,8 @@ void setup() {
   u8g2.setFont(u8g2_font_ncenB08_tr);	// choose a suitable font
   u8g2.drawStr(0,10,"Boot...");	// write something to the internal memory
   u8g2.sendBuffer();					// transfer internal memory to the display  
-     
+
+
   //objects init
   if (!tm.align_timer()){
     log_e("initialization failed");
@@ -399,17 +426,20 @@ void setup() {
 
 void tsk_decode(void * parameters) {  
 
-  AudioRecorder::record_t * data = (AudioRecorder::record_t * ) parameters;
 
   //get parameters
-  //TODO: use mutex / semaphore and try remove  memcpy
+  shared_data * data = (shared_data* ) parameters;
+
   size_t bytes_read =  data->bytes_read;
   int recording_time =  data->recording_time;
   int rate = data->rate;
-  uint8_t *psd_pcm_buffer = (uint8_t* )ps_malloc(bytes_read);  
-  memcpy(psd_pcm_buffer,data->pcm_buffer,bytes_read);
-  free(data->pcm_buffer);
+  uint8_t *lcl_pcm_buffer = (uint8_t* )ps_malloc(bytes_read);  
 
+  memcpy(lcl_pcm_buffer,data->pcm_buffer,bytes_read);
+  //free(data->pcm_buffer);
+  vTaskDelay(1);  // one tick delay (15ms) in between reads for stability 
+
+  
 #ifdef WRITEWAV 
   String file_name=FILE_WAV_PATH+FILE_WAV_PREFIX+millis()+FILE_WAV_SUFFIX;
   char * file_name_c = new char[file_name.length() + 1];
@@ -427,7 +457,7 @@ void tsk_decode(void * parameters) {
     vTaskDelete(NULL);
   }    
   file.write(header, headerSize);
-  file.write(psd_pcm_buffer, bytes_read);    
+  file.write(lcl_pcm_buffer, bytes_read);    
   log_d("PCM Bytes: %d", bytes_read);
   file.close();  
 
@@ -435,9 +465,9 @@ void tsk_decode(void * parameters) {
 
  #endif
 //  vTaskDelay(50);
-  decode_ft8(psd_pcm_buffer,bytes_read,rate);
-
-  free(psd_pcm_buffer);  
+  decode_ft8(lcl_pcm_buffer,bytes_read,rate);
+  log_v("decoded");
+  //free(lcl_pcm_buffer);  
   log_v("end task"); 
   vTaskDelete(NULL);
 }
@@ -456,10 +486,12 @@ void loop() {
 
       if (phase==decode) {
         //TODO: record in a separate task
-        AudioRecorder::record_t data = ar.record(14000);
-        //TODO: set name, heap size, priority
-        xTaskCreatePinnedToCore(tsk_decode,"Task1",60000,&data,2,NULL,0); 
-        delay(100); //TODO: remove delay
+        log_v("before recording");
+        ar.record(RECORDING_TIME,(uint8_t*&) data.pcm_buffer,data.rate,data.recording_time,data.bytes_read);
+        log_v("before create task decode");
+        //xTaskCreatePinnedToCore(tsk_decode,"decodint task",40000,&data,1,NULL,0); 
+        xTaskCreatePinnedToCore(tsk_decode,"decoding task",40000,&data,1,&xHandleDecode,0); 
+        delay(80); //TODO: remove delay
 
 
       } else if (phase == encode) {

@@ -9,15 +9,10 @@
 class AudioRecorder  {
   
     public:  
-      struct record_t {
-        size_t bytes_read;
-        int recording_time;
-        int rate;
-        uint8_t * pcm_buffer;
-      } record_data_t;
+
       AudioRecorder ();
       //~AudioRecorder ();
-      record_t record (int t);
+      void record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read);
       //void play (const char file_name[]);
       void play (String file_name);
       void begin ();
@@ -27,11 +22,7 @@ class AudioRecorder  {
       static const int BUFFER_SIZE = 4096;
       uint8_t buffer[BUFFER_SIZE];
       const static int rate = 11025;
-      
-      
-      //void set_status(status_t status);    
-
-        
+          
            
 };
 #endif

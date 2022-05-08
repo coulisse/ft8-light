@@ -1,11 +1,13 @@
 /// Configuration options for FT4/FT8 monitor
 typedef struct
 {
-    float f_min;             ///< Lower frequency bound for analysis
-    float f_max;             ///< Upper frequency bound for analysis
+    //float f_min;             ///< Lower frequency bound for analysis
+    int f_min;             ///< Lower frequency bound for analysis
+    //float f_max;             ///< Upper frequency bound for analysis
+    int f_max;             ///< Upper frequency bound for analysis
     int sample_rate;         ///< Sample rate in Hertz
-    int time_osr;            ///< Number of time subdivisions
-    int freq_osr;            ///< Number of frequency subdivisions
+    uint8_t time_osr;            ///< Number of time subdivisions
+    uint8_t freq_osr;            ///< Number of frequency subdivisions
     ftx_protocol_t protocol; ///< Protocol: FT4 or FT8
 } monitor_config_t;
 

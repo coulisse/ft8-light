@@ -110,6 +110,7 @@ bool TimeManager::align_timer() {
         Serial.print(time.tm_sec);
         Serial.print(" ");
     }
+    this->disableWiFi();
     //align to milliseconds
     while (get_time_mills() != 0) {
     }
@@ -120,6 +121,12 @@ bool TimeManager::align_timer() {
     timerAlarmWrite(timer, 1000000, true);
     timerAlarmEnable(timer);    
 };
+
+void TimeManager::disableWiFi(){
+    adc_power_off();
+    WiFi.disconnect(true);  // Disconnect from the network
+    WiFi.mode(WIFI_OFF);    // Switch WiFi off
+}
 
 /**
  * @brief used to set up NTP.

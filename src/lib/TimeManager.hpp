@@ -7,6 +7,7 @@
 #define TimeManager_h
 
 #include <Arduino.h>
+#include "driver/adc.h"
 
 
 class TimeManager  {
@@ -32,6 +33,7 @@ class TimeManager  {
             char* ssid;
             char* password;
             char* ntpServer;
+            void disableWiFi();
 
 };
 #endif
