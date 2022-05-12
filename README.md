@@ -17,12 +17,13 @@ FT8 Light
 - **My website:** [https://www.iu1bow.it](https://www.i1bow.it) 
 ___
 **FT8 Light** 
-The purpose of this project is to make a  portable "modem" for  FT8/FT4 ham-radio digital mode, usable in  QRP mode, with Yaesu FT897, FT857 and FT817 radio.
+The purpose of this project is to make a  portable "modem" for  **FT8/FT4** ham-radio **digital mode**, usable in  QRP mode, with Yaesu FT897, FT857 and FT817 radio.
 It could be also adaptable for others radio.
 
 **Library dependancies** 
 - [u8g2](https://github.com/olikraus/u8g2)
 - SPI
+- FreeRTOS
 - [AudioKitHAL](https://github.com/pschatzmann/arduino-audiokit)
 
 **Hardware** 
@@ -31,6 +32,7 @@ It could be also adaptable for others radio.
 
 **References**
 - [The ‘AI Thinker Audio Kit’ Arduino Challenge (Published by pschatzmann)](https://www.pschatzmann.ch/home/2021/12/06/the-ai-thinker-audio-kit-experience-or-nothing-is-right/)
+- I used the [kgoba/ft8_lib](https://github.com/kgoba/ft8_lib) as base  sliglty adapting them for this project.
 
 ### Changelog
 see file ["CHANGELOG.md"](docs/CHANGELOG.md)
@@ -44,10 +46,10 @@ Set the ESP32-A1S Audio Kit swithes in the following mode:
 - 5=off
 
 ### Setup
-TODO
+*TODO*
 
 ### Compiling
 If you are using Arduino IDE, compile with log level *info*, from menu: tools --> core debut level --> *info*
 
 ### Schema            
-TODO
+*TODO*
