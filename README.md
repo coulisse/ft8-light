@@ -16,11 +16,11 @@ FT8 Light
 - **Languages:** This application is written in C/C++
 - **My website:** [https://www.iu1bow.it](https://www.i1bow.it) 
 ___
-**FT8 Light** 
+**FT8 Light**   
 The purpose of this project is to make a  portable "modem" for  **FT8/FT4** ham-radio **digital mode**, usable in  QRP mode, with Yaesu FT897, FT857 and FT817 radio.
 It could be also adaptable for others radio.
 
-**Library dependancies** 
+**Library dependancies**
 - [u8g2](https://github.com/olikraus/u8g2)
 - SPI
 - FreeRTOS
