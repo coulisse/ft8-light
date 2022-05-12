@@ -32,7 +32,7 @@ It could be also adaptable for others radio.
 
 **References**
 - [The ‘AI Thinker Audio Kit’ Arduino Challenge (Published by pschatzmann)](https://www.pschatzmann.ch/home/2021/12/06/the-ai-thinker-audio-kit-experience-or-nothing-is-right/)
-- I used the [kgoba/ft8_lib](https://github.com/kgoba/ft8_lib) as base  sliglty adapting them for this project.
+- I used the [kgoba/ft8_lib](https://github.com/kgoba/ft8_lib) as base, sliglty adapting them for this project.
 
 ### Changelog
 see file ["CHANGELOG.md"](docs/CHANGELOG.md)
