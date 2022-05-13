@@ -1,8 +1,13 @@
+//TODO: try to put decode in a module / object
+//TODO: try to compile with a better code optimization
+//TODO: check longer times
+#include <Arduino.h>
 #include <Wire.h>
+
+#include <TimeManager.hpp>
+#include <AudioRecorder.hpp>
+#include "config.h"
 #include <U8g2lib.h>
-#include "src/lib/TimeManager.hpp"
-#include "src/lib/AudioRecorder.hpp"
-#include "src/lib/config.h"
 //-----------------------------------------------------------------------
 #include <stdlib.h>
 #include <string.h>
@@ -10,31 +15,39 @@
 #include <math.h>
 #include <stdbool.h>
 
-#include "src/lib/ft8_lib/ft8/unpack.h"
-#include "src/lib/ft8_lib/ft8/ldpc.h"
-#include "src/lib/ft8_lib/ft8/decode.h"
-#include "src/lib/ft8_lib/ft8/constants.h"
-#include "src/lib/ft8_lib/ft8/encode.h"
-#include "src/lib/ft8_lib/ft8/crc.h"
-#include "src/lib/ft8_lib/common/common.h"
-#include "src/lib/ft8_lib/common/wave.h"
-#include "src/lib/ft8_lib/common/debug.h"
-#include "src/lib/ft8_lib/fft/kiss_fftr.h"
+#include "../ft8_lib/ft8/unpack.h"
+#include "../ft8_lib/ft8/ldpc.h"
+#include "../ft8_lib/ft8/decode.h"
+#include "../ft8_lib/ft8/constants.h"
+#include "../ft8_lib/ft8/encode.h"
+#include "../ft8_lib/ft8/crc.h"
+#include "../ft8_lib/common/common.h"
+#include "../ft8_lib/common/wave.h"
+#include "../ft8_lib/common/debug.h"
+#include "../ft8_lib/fft/kiss_fftr.h"
 #include "monitor_struct.h"
 
 #define LOG_LEVEL LOG_INFO
+
+struct shared_data {
+    size_t bytes_read;
+    int recording_time;
+    int rate;
+    uint8_t ** pcm_buffer;
+} shared_data_t;
+
 
 const int kMin_score = 10; // Minimum sync score threshold for candidates
 const int kMax_candidates = 120;
 const int kLDPC_iterations = 20;
 
-const int kMax_decoded_messages = 50;
+const uint8_t kMax_decoded_messages = 50;
 
-const int kFreq_osr = 2; // Frequency oversampling rate (bin subdivision)
-const int kTime_osr = 2; // Time oversampling rate (symbol subdivision)
+const uint8_t kFreq_osr = 2; // Frequency oversampling rate (bin subdivision)
+const uint8_t kTime_osr = 2; // Time oversampling rate (symbol subdivision)
 
 
-static float hann_i(int i, int N)
+static float IRAM_ATTR hann_i(int i, int N)
 {
     float x = sinf((float)M_PI * i / N);
     return x * x;
@@ -62,7 +75,7 @@ static float blackman_i(int i, int N)
     return a0 - a1 * x1 + a2 * x2;
 }
 
-void waterfall_init(waterfall_t* me, int max_blocks, int num_bins, int time_osr, int freq_osr)
+void waterfall_init(waterfall_t* me, int max_blocks, int num_bins, uint8_t time_osr, uint8_t freq_osr)
 {
     size_t mag_size = max_blocks * time_osr * freq_osr * num_bins * sizeof(me->mag[0]);
     me->max_blocks = max_blocks;
@@ -71,8 +84,14 @@ void waterfall_init(waterfall_t* me, int max_blocks, int num_bins, int time_osr,
     me->time_osr = time_osr;
     me->freq_osr = freq_osr;
     me->block_stride = (time_osr * freq_osr * num_bins);
-    me->mag = (uint8_t  *)malloc(mag_size);
-    log_d( "Waterfall size = %zu\n", mag_size);
+    log_v("Number of element in mag: %d", mag_size/sizeof(uint8_t));
+    log_v("allocating local mag");
+    //uint8_t *loc_mag = (uint8_t* )ps_malloc(mag_size);    
+    me->mag = (uint8_t* )ps_malloc(mag_size);  
+    //log_v("assign local mag to structure");
+    //me->mag = loc_mag;
+    log_d("Waterfall size = %zu", mag_size);
+    log_v("Free PSRAM.: %d", ESP.getFreePsram());
 }
 
 void waterfall_free(waterfall_t* me)
@@ -80,6 +99,7 @@ void waterfall_free(waterfall_t* me)
     free(me->mag);
 }
 
+//void monitor_init(monitor_t* me, const monitor_config_t* cfg)
 void monitor_init(monitor_t* me, const monitor_config_t* cfg)
 {
     float slot_time = (cfg->protocol == PROTO_FT4) ? FT4_SLOT_TIME : FT8_SLOT_TIME;
@@ -105,10 +125,10 @@ void monitor_init(monitor_t* me, const monitor_config_t* cfg)
     size_t fft_work_size;
     kiss_fftr_alloc(me->nfft, 0, 0, &fft_work_size);
 
-    log_i( "Block size = %d\n", me->block_size);
-    log_i( "Subblock size = %d\n", me->subblock_size);
-    log_i( "N_FFT = %d\n", me->nfft);
-    log_d( "FFT work area = %zu\n", fft_work_size);
+    log_i( "Block size = %d", me->block_size);
+    log_i( "Subblock size = %d", me->subblock_size);
+    log_i( "N_FFT = %d", me->nfft);
+    log_d( "FFT work area = %zu", fft_work_size);
 
     me->fft_work = malloc(fft_work_size);
     me->fft_cfg = kiss_fftr_alloc(me->nfft, 0, me->fft_work, &fft_work_size);
@@ -132,17 +152,8 @@ void monitor_free(monitor_t* me)
 
 // Compute FFT magnitudes (log wf) for a frame in the signal and update waterfall data
 void monitor_process(monitor_t* me, const float* frame)
-//void monitor_process(monitor_t* me, uint8_t* frame)
 {
-    log_v("monitor process started");
-    log_v("frame: %d", &frame);
-/*
-    log_v("======================================");
-    for (int i=0; i<100; i++){
-      Serial.write(frame[i]);
-    }
-    Serial.println();
-*/
+
     // Check if we can still store more waterfall data
     if (me->wf.num_blocks >= me->wf.max_blocks)
         return;
@@ -150,72 +161,48 @@ void monitor_process(monitor_t* me, const float* frame)
     int offset = me->wf.num_blocks * me->wf.block_stride;
     int frame_pos = 0;
 
-    log_v("Before Loop over block subdivisions");
     // Loop over block subdivisions
     for (int time_sub = 0; time_sub < me->wf.time_osr; ++time_sub)
     {
         kiss_fft_scalar timedata[me->nfft];
         kiss_fft_cpx freqdata[me->nfft / 2 + 1];
-        log_v("monitor process step 01");
         // Shift the new data into analysis frame
         for (int pos = 0; pos < me->nfft - me->subblock_size; ++pos)
         {
             me->last_frame[pos] = me->last_frame[pos + me->subblock_size];
         }
-        log_v("monitor process step 02");
         for (int pos = me->nfft - me->subblock_size; pos < me->nfft; ++pos)
         {
             me->last_frame[pos] = frame[frame_pos];
             ++frame_pos;
         }
-        log_v("monitor process step 03");
         // Compute windowed analysis frame
         for (int pos = 0; pos < me->nfft; ++pos)
         {
             timedata[pos] = me->fft_norm * me->window[pos] * me->last_frame[pos];
         }
 
-        log_v("monitor process step 04");
         kiss_fftr(me->fft_cfg, timedata, freqdata);
 
-        log_v("monitor process step 05");
         // Loop over two possible frequency bin offsets (for averaging)
         for (int freq_sub = 0; freq_sub < me->wf.freq_osr; ++freq_sub)
         {
-          log_v("monitor process step 05.A");
             for (int bin = 0; bin < me->wf.num_bins; ++bin)
             {
-                log_v("monitor process step 05.B");
                 int src_bin = (bin * me->wf.freq_osr) + freq_sub;
-                log_v("monitor process step 05.C");
                 float mag2 = (freqdata[src_bin].i * freqdata[src_bin].i) + (freqdata[src_bin].r * freqdata[src_bin].r);
-                log_v("monitor process step 05.D");
                 float db = 10.0f * log10f(1E-12f + mag2);
-                log_v("monitor process step 05.E");
                 // Scale decibels to unsigned 8-bit range and clamp the value
                 // Range 0-240 covers -120..0 dB in 0.5 dB steps
                 int scaled = (int)(2 * db + 240);
-                log_v("monitor process step 05.F");
-            
+                //log_v("offset %d, me->wf.mag[offset]= %d", offset, me->wf.mag[offset] );
                 me->wf.mag[offset] = (scaled < 0) ? 0 : ((scaled > 255) ? 255 : scaled);
-                /*
-                log_v("monitor process step 05.F1");
-                uint8_t loc_mag = (scaled < 0) ? 0 : ((scaled > 255) ? 255 : scaled);
-                log_v("mag %d", loc_mag);
-                log_v("monitor process step 05.F2");
-
-                memcpy(&me->wf.mag[offset], &loc_mag, sizeof(uint8_t));
-                log_v("monitor process step 05.G");
-                */
                 ++offset;
-                log_v("monitor process step 05.H");
                 if (db > me->max_mag)
-                    log_v("monitor process step 05.I");
                     me->max_mag = db;
             }
         }
     }
-    log_v("monitor process step 06");
     ++me->wf.num_blocks;
 }
 
@@ -225,30 +212,36 @@ void monitor_reset(monitor_t* me)
     me->max_mag = 0;
 }
 
-int decode_ft8(char* wav_path)
-//int decode_ft8(uint8_t *signal)
+
+//int decode_ft8(char* wav_path)
+int IRAM_ATTR decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate)
 {
     
-    log_v("decoding: %s", wav_path);
-  //  log_v("buffer pointer %d",&signal);
+    log_v("entered in decoding");
     bool is_ft8 = true;
-    int sample_rate = 11025;
-    //int num_samples = 15 * sample_rate;
-    int num_samples = 7 * sample_rate;
-    log_v("creating signal array of %d samples", num_samples);
-    //float signal[num_samples];
-    float *signal = (float* )ps_malloc(num_samples*sizeof(float));
-    log_v("signal array created; Free heap..: %d", ESP.getFreeHeap());    
-    int rc = load_wav(signal, &num_samples, &sample_rate, wav_path);
-    if (rc < 0)
-    {
-        return -1;
-    }
 
-    log_i( "Sample rate %d Hz, %d samples, %.3f seconds\n", sample_rate, num_samples, (double)num_samples / sample_rate);
+    //int32_t num_samples = 15 * sample_rate;
+    int32_t num_samples = bytes_read / 2;
+    log_v("Free PSRAM: %d", ESP.getFreePsram());
+    int16_t raw_data;
+    int32_t j=0;
+    //todo: try with int16_t instead int32_t (j and i)
+    //todo: try other methods for convert byte in int
+    float *signal = (float* )ps_malloc(num_samples*sizeof(float));
+    for (int i=0;i<num_samples;i++){
+      raw_data =  pcm_buffer[j] | pcm_buffer[j+1] << 8;
+      //signal[i]=raw_data/ 32768.0f;
+      signal[i]=raw_data * (1.0f / 32768.0f);
+      j+=2;
+    };
+    log_v("Free PSRAM.: %d", ESP.getFreePsram());
+    log_i("Sample rate %d Hz, %d samples, %.3f seconds", sample_rate, num_samples, (double)num_samples / sample_rate);
 
     // Compute FFT over the whole signal and store it
     monitor_t mon;
+    //monitor_t *mon = (monitor_t *)malloc(sizeof(monitor_t));  
+    log_v("monitor allocated");
+ 
     monitor_config_t mon_cfg = {
         .f_min = 100,
         .f_max = 3000,
@@ -257,24 +250,28 @@ int decode_ft8(char* wav_path)
         .freq_osr = kFreq_osr,
         .protocol = is_ft8 ? PROTO_FT8 : PROTO_FT4
     };
-    monitor_init(&mon, &mon_cfg);
-    log_d("Waterfall allocated %d symbols\n", mon.wf.max_blocks);
-
-    for (int frame_pos = 0; frame_pos + mon.block_size <= num_samples; frame_pos += mon.block_size)
+    monitor_init(&mon, &mon_cfg);  
+    
+    log_d("Waterfall allocated %d symbols",mon.wf.max_blocks);
+    //for (int frame_pos = 0; frame_pos +mon.block_size <= num_samples; frame_pos +=mon.block_size)
+    for (int frame_pos = 0; frame_pos +mon.block_size <= num_samples; frame_pos +=mon.block_size)
     {
-        // Process the waveform data frame by frame - you could have a live loop here with data from an audio device
+        vTaskDelay(1);
         monitor_process(&mon, signal + frame_pos);
     }
-    log_d("Waterfall accumulated %d symbols\n", mon.wf.num_blocks);
-    log_d("Max magnitude: %.1f dB\n", mon.max_mag);
-
+    log_v("after monitor loop");
+    log_d( "Waterfall accumulated %d symbols",mon.wf.num_blocks);
+    log_i( "Max magnitude: %.1f dB",mon.max_mag);
+    
     // Find top candidates by Costas sync score and localize them in time and frequency
     candidate_t candidate_list[kMax_candidates];
-    int num_candidates = ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
+    uint8_t num_candidates = (uint8_t) ft8_find_sync(&mon.wf, kMax_candidates, candidate_list, kMin_score);
 
     // Hash table for decoded messages (to check for duplicates)
-    int num_decoded = 0;
+    uint8_t num_decoded = 0;
     message_t decoded[kMax_decoded_messages];
+
+    /*
     message_t* decoded_hashtable[kMax_decoded_messages];
 
     // Initialize hash table pointers
@@ -282,56 +279,65 @@ int decode_ft8(char* wav_path)
     {
         decoded_hashtable[i] = NULL;
     }
+    */
 
+    message_t* decoded_hashtable[kMax_decoded_messages] = {};
     // Go over candidates and attempt to decode messages
-    for (int idx = 0; idx < num_candidates; ++idx)
+    log_i("Number of candidates: %d", num_candidates);
+    for (uint8_t idx = 0; idx < num_candidates; ++idx)
     {
+        vTaskDelay(1);
         const candidate_t* cand = &candidate_list[idx];
         if (cand->score < kMin_score)
             continue;
 
-        float freq_hz = (cand->freq_offset + (float)cand->freq_sub / mon.wf.freq_osr) / mon.symbol_period;
-        float time_sec = (cand->time_offset + (float)cand->time_sub / mon.wf.time_osr) * mon.symbol_period;
+        float freq_hz = (cand->freq_offset + (float)cand->freq_sub /mon.wf.freq_osr) /mon.symbol_period;
+        float time_sec = (cand->time_offset + (float)cand->time_sub /mon.wf.time_osr) *mon.symbol_period;
 
         message_t message;
         decode_status_t status;
+        ft8_decode(&mon.wf, cand, &message, kLDPC_iterations, &status);
+        /*
         if (!ft8_decode(&mon.wf, cand, &message, kLDPC_iterations, &status))
         {
+            
             // printf("000000 %3d %+4.2f %4.0f ~  ---\n", cand->score, time_sec, freq_hz);
             if (status.ldpc_errors > 0)
             {
-                log_d("LDPC decode: %d errors\n", status.ldpc_errors);
+                log_d( "LDPC decode: %d errors", status.ldpc_errors);
             }
             else if (status.crc_calculated != status.crc_extracted)
             {
-                log_d("CRC mismatch!\n");
+                log_d( "CRC mismatch!");
             }
             else if (status.unpack_status != 0)
             {
-                log_d( "Error while unpacking!\n");
+                log_d( "Error while unpacking!");
             }
             continue;
         }
-
-        log_d( "Checking hash table for %4.1fs / %4.1fHz [%d]...\n", time_sec, freq_hz, cand->score);
-        int idx_hash = message.hash % kMax_decoded_messages;
+        */
+        
+         log_d( "Checking hash table for %4.1fs / %4.1fHz [%d]...", time_sec, freq_hz, cand->score);
+        uint8_t idx_hash = message.hash % kMax_decoded_messages;
+        
         bool found_empty_slot = false;
         bool found_duplicate = false;
         do
         {
             if (decoded_hashtable[idx_hash] == NULL)
             {
-                log_d( "Found an empty slot\n");
+                log_d( "Found an empty slot");
                 found_empty_slot = true;
             }
             else if ((decoded_hashtable[idx_hash]->hash == message.hash) && (0 == strcmp(decoded_hashtable[idx_hash]->text, message.text)))
             {
-                log_d( "Found a duplicate [%s]\n", message.text);
+                log_d( "Found a duplicate [%s]", message.text);
                 found_duplicate = true;
             }
             else
             {
-                log_d( "Hash table clash!\n");
+                log_d( "Hash table clash!");
                 // Move on to check the next entry in hash table
                 idx_hash = (idx_hash + 1) % kMax_decoded_messages;
             }
@@ -339,28 +345,29 @@ int decode_ft8(char* wav_path)
 
         if (found_empty_slot)
         {
+            
+        
             // Fill the empty hashtable slot
             memcpy(&decoded[idx_hash], &message, sizeof(message));
             decoded_hashtable[idx_hash] = &decoded[idx_hash];
             ++num_decoded;
 
             // Fake WSJT-X-like output for now
-            int snr = 0; // TODO: compute SNR
-            printf("000000 %3d %+4.2f %4.0f ~  %s\n", cand->score, time_sec, freq_hz, message.text);
+            //int snr = 0; // TODO: compute SNR
+            //printf("000000 %3d %+4.2f %4.0f ~  %s\n", cand->score, time_sec, freq_hz, message.text);
+            log_i("000000 %3d %+4.2f %4.0f ~  %s", cand->score, time_sec, freq_hz, message.text);
         }
     }
-    log_i( "Decoded %d messages\n", num_decoded);
+    log_i("decoded %d messages", num_decoded);
 
     monitor_free(&mon);
+    free(signal);
 
     return 0;
 }
 
 
 //-----------------------------------------------------------------------
-
-
-
 
 /* Display related */
 #define PIN_DISPLAY_CK 18
@@ -377,17 +384,108 @@ TimeManager tm(ssid,password,ntpServer);
 
 AudioRecorder ar;
 
+/* definitions for task management */
+TaskHandle_t xHandleRecord;
+TaskHandle_t xHandleDecode;
+#define TSK_DECODE_BIT (1UL<<0UL) //Unsigned long bit0 set to 1
+EventGroupHandle_t xEventGroup;
+shared_data data;
 
-TaskHandle_t Task_ar;
 
+void tsk_record(void * parameters) {  
+
+
+   for (;;) {
+        shared_data* data = (shared_data*) parameters;
+        //log_v("malloc buffer");
+        //free(data->pcm_buffer);
+        //data->pcm_buffer = (uint8_t** )ps_malloc(1*sizeof(uint8_t));
+        //ps_realloc(data->pcm_buffer,1*sizeof(uint8_t));
+        
+        log_v("recording..");
+        ar.record(RECORDING_TIME,(uint8_t*&) data->pcm_buffer,data->rate,data->recording_time,data->bytes_read,xEventGroup,TSK_DECODE_BIT);
+        //ar.record(RECORDING_TIME,(uint8_t*&) parameters,r,rt,br);
+        log_v("rate %d, recording time %d, bytes read %d", data->rate,data->recording_time,data->bytes_read);
+    //    vTaskDelete(NULL);
+/*
+        log_v("setting bit for decoding...");
+        xEventGroupSetBits(xEventGroup,TSK_DECODE_BIT); //Event,bit
+  */      
+        log_v("Suspending recording task..."); 
+        vTaskSuspend(NULL);
+
+        log_v("Recording task resumed"); 
+    }
+}
+
+
+
+void tsk_decode(void * parameters) {  
+
+    const EventBits_t xBitsToWaitFor = TSK_DECODE_BIT;
+    EventBits_t xEventGroupValue;
+
+    for (;;) {
+        xEventGroupValue = xEventGroupWaitBits(xEventGroup,xBitsToWaitFor,pdTRUE,pdTRUE,portMAX_DELAY);//EventGroup,receive, clear on exit, all bits?,wait
+        if(xEventGroupValue & TSK_DECODE_BIT != 0) {
+            xEventGroupClearBits(xEventGroup,xBitsToWaitFor);        
+            //get parameters
+            shared_data * data = (shared_data* ) parameters;
+
+            size_t bytes_read =  data->bytes_read;
+            int recording_time =  data->recording_time;
+            int rate = data->rate;
+            uint8_t *lcl_pcm_buffer = (uint8_t* )ps_malloc(bytes_read);  
+
+            memcpy(lcl_pcm_buffer,data->pcm_buffer,bytes_read);
+            //free(data->pcm_buffer);
+            vTaskDelay(1);  // one tick delay (15ms) in between reads for stability 
+
+            
+            #ifdef WRITEWAV 
+            String file_name=FILE_WAV_PATH+FILE_WAV_PREFIX+millis()+FILE_WAV_SUFFIX;
+            char * file_name_c = new char[file_name.length() + 1];
+            strcpy(file_name_c,file_name.c_str()); 
+
+            //create header
+            int headerSize = 44;  
+            byte header[headerSize]; 
+            CreateWavHeader(header, (recording_time*rate/1000*2)-1);
+
+            //writing file
+            File file = SD.open(file_name_c, FILE_WRITE);
+            if (!file) {
+                log_e("Could not write file");
+                vTaskDelete(NULL);
+            }    
+            file.write(header, headerSize);
+            file.write(lcl_pcm_buffer, bytes_read);    
+            log_d("PCM Bytes: %d", bytes_read);
+            file.close();  
+
+            log_i ("recorded: %s", file_name_c);
+
+            #endif
+            //  vTaskDelay(50);
+            decode_ft8(lcl_pcm_buffer,bytes_read,rate); //TODO: replace with data-> psd??
+            log_v("decoded");
+            free(lcl_pcm_buffer);  
+            log_v("end task"); 
+            //vTaskSuspend(NULL);
+        }
+    }
+}
+
+
+ 
 
 void setup() {
 
   Serial.begin(115200);
-  log_i("Total heap.: %d", ESP.getHeapSize());
+  log_v("Total heap.: %d", ESP.getHeapSize());
   log_i("Free heap..: %d", ESP.getFreeHeap());
-  log_i("Total PSRAM: %d", ESP.getPsramSize());
-  log_i("Free PSRAM.: %d", ESP.getFreePsram());  
+  log_v("Total PSRAM: %d", ESP.getPsramSize());
+  log_v("Free PSRAM.: %d", ESP.getFreePsram());  
 
   //Display Init
   u8g2.begin();
@@ -395,11 +493,21 @@ void setup() {
   u8g2.setFont(u8g2_font_ncenB08_tr);	// choose a suitable font
   u8g2.drawStr(0,10,"Boot...");	// write something to the internal memory
   u8g2.sendBuffer();					// transfer internal memory to the display  
-  
-  
-  //String recorded_file = ar.record(3000);
-  //ar.play(recorded_file);
-      
+
+  ar.begin();
+
+  //tasks
+    //data.pcm_buffer = (uint8_t** )ps_malloc(1*sizeof(uint8_t));
+  data.pcm_buffer = (uint8_t** )ps_malloc(400000*sizeof(uint8_t));
+  xEventGroup = xEventGroupCreate();
+  log_v("init tsk_record");
+  xTaskCreatePinnedToCore(tsk_record,"recording task",30000,&data,1,&xHandleRecord,1); 
+  delay(15000);
+  log_v("init tsk_decode");
+  xTaskCreatePinnedToCore(tsk_decode,"decoding  task",40000,&data,1,&xHandleDecode,0);   
+  delay(15000);
+
+
   //objects init
   if (!tm.align_timer()){
     log_e("initialization failed");
@@ -407,64 +515,9 @@ void setup() {
       //stop here
     }
   };
-  ar.begin();
+
+
 }
-
-
-void tsk_decode(void * parameters) {  
-
-  AudioRecorder::record_t * data = (AudioRecorder::record_t * ) parameters;
-
-  //get parameters
-  //TODO: use mutex
-  size_t bytes_read =  data->bytes_read;
-  int recording_time =  data->recording_time;
-  int rate = data->rate;
-  uint8_t *psd_pcm_buffer = (uint8_t* )ps_malloc(bytes_read);  
-  memcpy(psd_pcm_buffer,data->pcm_buffer,bytes_read);
-  free(data->pcm_buffer);
-
-  String file_name=FILE_WAV_PATH+FILE_WAV_PREFIX+millis()+FILE_WAV_SUFFIX;
-  //String file_name="/prova.wav";
-  char * file_name_c = new char[file_name.length() + 1];
-  strcpy(file_name_c,file_name.c_str()); 
- 
-  //create header
-  int headerSize = 44;  
-  byte header[headerSize]; 
-  CreateWavHeader(header, (recording_time*rate/1000*2)-1);
-
-  //writing file
-  File file = SD.open(file_name_c, FILE_WRITE);
-  if (!file) {
-    log_e("Could not write file");
-    vTaskDelete(NULL);
-  }    
-  file.write(header, headerSize);
-  file.write(psd_pcm_buffer, bytes_read);    
-  log_d("PCM Bytes: %d", bytes_read);
-  file.close();  
-
-
-  //int d = decode_main(file_name_c,rate);
-  log_i ("recorded: %s", file_name_c);
-  log_v("before enter in decoding");
-  /*
-  log_v("======================================");
-  for (int i=0; i<100; i++){
-    Serial.write(psd_pcm_buffer[i]);
-  }
-  Serial.println();
-  */
-  free(psd_pcm_buffer);  
-  decode_ft8(file_name_c);
-  //decode_ft8(file_name_c);
-
-
-  log_v("end task"); 
-  vTaskDelete(NULL);
-}
-
 
 
 void loop() {
@@ -478,18 +531,15 @@ void loop() {
       tm.resetClock();
 
       if (phase==decode) {
-        
-        AudioRecorder::record_t data = ar.record(14000);
-        log_v("creating task...");
-        log_v("Free heap..: %d", ESP.getFreeHeap());
-        BaseType_t tsk = xTaskCreatePinnedToCore(tsk_decode,"Task1",80000,&data,2,NULL,0); 
-        if (tsk==1) {
-            delay(100);
-            log_v("task created");
-        } else {
-          log_e("decoding task not created");
-        }
-        log_v("Free heap..: %d", ESP.getFreeHeap());
+        //TODO: record in a separate task
+        log_v("before resume");
+        vTaskResume(xHandleRecord);
+        //ar.record(RECORDING_TIME,(uint8_t*&) data.pcm_buffer,data.rate,data.recording_time,data.bytes_read);
+        log_v("before create task decode");
+        //xTaskCreatePinnedToCore(tsk_decode,"decodint task",40000,&data,1,NULL,0); 
+        //xTaskCreatePinnedToCore(tsk_decode,"decoding task",40000,&data,1,&xHandleDecode,0); 
+        //delay(80); //TODO: remove delay
+
 
       } else if (phase == encode) {
         //ar.play("/sample_16000_16_mono.wav");
@@ -499,7 +549,6 @@ void loop() {
     } 
   }
 
-
-
 }  
- 
+
+

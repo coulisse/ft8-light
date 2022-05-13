@@ -49,7 +49,7 @@ Set the ESP32-A1S Audio Kit swithes in the following mode:
 *TODO*
 
 ### Compiling
-If you are using Arduino IDE, compile with log level *info*, from menu: tools --> core debut level --> *info*
+This project use (**plaftorm.io**) [https://platformio.org/install/ide?install=vscode] with Visual Studio Code
 
 ### Schema            
 *TODO*
