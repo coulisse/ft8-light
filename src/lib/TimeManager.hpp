@@ -24,8 +24,8 @@ class TimeManager  {
             static clock intrTimer;
             void resetClock(); 
             String printTime();
+            String get_time_hhmmss();
             
-  
       private: 
             int64_t get_time_mills();
             bool setup_ntp();

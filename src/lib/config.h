@@ -10,8 +10,7 @@
 
 #define ntpServer "pool.ntp.org"
 
-#define RECORDING_TIME 12000
-#define DECODING_TIME  5000
+#define RECORDING_TIME 9500
 
 /* define WRITEWAV if you would record on file .wav */
 //#define WRITEWAV

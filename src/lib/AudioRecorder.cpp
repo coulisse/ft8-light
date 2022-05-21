@@ -45,23 +45,22 @@ void AudioRecorder::begin() {
 
 }
 
-void  AudioRecorder::record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &recording_time, size_t &bytes_read, EventGroupHandle_t xEventGroup, EventBits_t TSK_DECODE_BIT) {
-  log_v("a0") ;
+void  AudioRecorder::record (int t, uint8_t*&psd_pcm_buffer, int &shr_rate, int &shr_recording_time, size_t &shr_bytes_from, size_t &shr_bytes_read) {
    //TODO: return data without buffer
   i2s_set_clk(I2S_NUM_0,this->rate,I2S_BITS_PER_SAMPLE_16BIT,I2S_CHANNEL_MONO);   //Setting MONO
   int start_time = millis();
-  int record_time=0;
+  int recording_time=0;
   int total_bytes_read =0;
   int prev_dim = 0;
   int current_bytes_read=0;
-  //ps_realloc(psd_pcm_buffer, total_bytes_read);  
-  //ps_realloc(psd_pcm_buffer, 1);  
-  log_v("c");
   int start = 0;
-  while (record_time <t) {
+
+  
+  while (recording_time <t) {
     prev_dim = total_bytes_read;
     //TODO: try to read int instead of bytes 
     current_bytes_read=kit.read(buffer, BUFFER_SIZE);
+    /*
     if (start==0) {
       start=1;
       for (int i=0;i<100;i++){
@@ -69,23 +68,19 @@ void  AudioRecorder::record (int t, uint8_t*&psd_pcm_buffer, int &rate, int &rec
       }
       Serial.println(" -----");
     }
+    */
     
     total_bytes_read += current_bytes_read;
-    //ps_realloc(psd_pcm_buffer, total_bytes_read);   
     memcpy(&psd_pcm_buffer[prev_dim],buffer,current_bytes_read);
-    record_time = millis()-start_time;
+    recording_time = millis()-start_time;
   }
 
-  rate=this->rate;
-  recording_time=record_time;
-  bytes_read=total_bytes_read;
+  shr_rate=this->rate;
+  shr_recording_time=recording_time;
+  shr_bytes_from = 0;
+  shr_bytes_read=total_bytes_read;
 
-  log_v("setting bit for decoding...");
-  xEventGroupSetBits(xEventGroup,TSK_DECODE_BIT); //Event,bit
-
-
-  return; 
-  
+  return;  
 }
 void AudioRecorder::play (String file_name) {  
 

@@ -60,6 +60,7 @@ int64_t TimeManager::get_time_mills() {
     return (tv.tv_usec / 1000LL);
 };    
 
+
 /**
  * @brief class constructor
   */
@@ -174,3 +175,18 @@ String TimeManager::printTime(){
     String buffAsStdStr = buff;
     return buffAsStdStr;
 };
+
+String TimeManager::get_time_hhmmss(){
+    struct tm time;
+    if(!getLocalTime(&time)){
+        log_e("Could not obtain time info");
+        return "";
+    }
+    //Serial.printf("time: %u:%u:%u.",time.tm_hour,time.tm_min, time.tm_sec);  
+    //Serial.println(get_time_mills());
+
+    char buff[7];
+    snprintf(buff, sizeof(buff), "%02u%02u%02u",time.tm_hour,time.tm_min, time.tm_sec);
+    String buffAsStdStr = buff;
+    return buff;    
+}
