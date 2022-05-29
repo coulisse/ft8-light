@@ -64,17 +64,9 @@ int64_t TimeManager::get_time_mills() {
 /**
  * @brief class constructor
   */
-TimeManager::TimeManager(char* id, char* pwd, char* ntpSrv, int timer_id) {    
+//TimeManager::TimeManager(char* id, char* pwd, char* ntpSrv, int timer_id) {    
+TimeManager::TimeManager() {        
     
-    intrTimer.number=0;
-    intrTimer.raised=true;
-    prv_timer_id = timer_id;
-    this->ssid = id;
-    this->password = pwd;
-    this->ntpServer=ntpSrv;
-    
- //        timer = NULL;
- //        timerMux = portMUX_INITIALIZER_UNLOCKED;
 };
 
 /**
@@ -86,8 +78,22 @@ TimeManager::TimeManager(char* id, char* pwd, char* ntpSrv, int timer_id) {
  * Init internal timer setting clock to 1 second 
  * 
 */
+void TimeManager::begin(char* id, char* pwd, char* ntpSrv, int timer_id) {
+ //        timer = NULL;
+ //        timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+
+    intrTimer.number=0;
+    intrTimer.raised=true;
+    prv_timer_id = timer_id;
+    this->ssid = id;
+    this->password = pwd;
+    this->ntpServer=ntpSrv;
+       
+}
 bool TimeManager::align_timer() {
     //connecting to wifi and get ntp time
+
 
     if (!this->setup_ntp()) {
         log_e("Could not connect to wifi");
@@ -167,9 +173,6 @@ String TimeManager::printTime(){
         log_e("Could not obtain time info");
         return "";
     }
-    //Serial.printf("time: %u:%u:%u.",time.tm_hour,time.tm_min, time.tm_sec);  
-    //Serial.println(get_time_mills());
-
     char buff[28];
     snprintf(buff, sizeof(buff), "current time: %u:%u:%u",time.tm_hour,time.tm_min, time.tm_sec);
     String buffAsStdStr = buff;
@@ -182,9 +185,6 @@ String TimeManager::get_time_hhmmss(){
         log_e("Could not obtain time info");
         return "";
     }
-    //Serial.printf("time: %u:%u:%u.",time.tm_hour,time.tm_min, time.tm_sec);  
-    //Serial.println(get_time_mills());
-
     char buff[7];
     snprintf(buff, sizeof(buff), "%02u%02u%02u",time.tm_hour,time.tm_min, time.tm_sec);
     String buffAsStdStr = buff;

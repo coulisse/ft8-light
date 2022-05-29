@@ -12,8 +12,10 @@
 
 class TimeManager  {
       public:  
-            TimeManager (char* id, char* pwd, char* ntpServer, int timer_id=0);
+            //TimeManager (char* id, char* pwd, char* ntpServer, int timer_id=0);
+            TimeManager ();
             //~TimeManager();
+            void begin(char* id, char* pwd, char* ntpServer, int timer_id=0);
             bool align_timer();
             
             struct clock {

@@ -5,16 +5,11 @@
 
 #include <Wire.h>
 #include <U8g2lib.h>
+#include "src/lib/Config.hpp"
 #include "src/lib/TimeManager.hpp"
 #include "src/lib/AudioRecorder.hpp"
-#include "src/lib/config.h"
+#include "src/lib/constants.h"
 #include "src/lib/decoder.hpp"
-
-
-/* Display related */
-#define PIN_DISPLAY_CK 18
-#define PIN_DISPLAY_DT 23
-
 
 enum ft_phase {decode, encode, nothing};
 ft_phase phase = decode;
@@ -22,20 +17,22 @@ ft_phase phase = decode;
 //U8G2 display config
 U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
 
-TimeManager tm(ssid,password,ntpServer);
-
+Config cfg;
+//TimeManager tm(ssid,password,ntpServer);
+TimeManager tm;
 AudioRecorder ar;
 
 /* definitions for task management */
 TaskHandle_t xHandleRecord;
 TaskHandle_t xHandleDecode;
-#define TSK_DECODE_BIT (1UL<<0UL) //Unsigned long bit0 set to 1
+
 EventGroupHandle_t xEventGroup;
 shared_data data;
 
 void setup() {
 
     Serial.begin(115200);
+
     log_i("*********************************************");
     log_i("                START SETUP                  ");
     log_i("*********************************************");
@@ -44,6 +41,11 @@ void setup() {
     log_v("Total PSRAM: %d", ESP.getPsramSize());
     log_v("Free PSRAM.: %d", ESP.getFreePsram());  
 
+    bool rc=cfg.begin();
+    while (!rc) {
+        //stop
+    }
+    
     //Display Init
     u8g2.begin();
     u8g2.clearBuffer();					// clear the internal memory
@@ -52,7 +54,6 @@ void setup() {
 //    u8g2.setFont(u8g2_font_squeezed_b6_tr);	// choose a suitable font
     u8g2.drawStr(0,17,"Boot...");	// write something to the internal memory
 
-    
 
     u8g2.sendBuffer();					// transfer internal memory to the display  
 
@@ -78,7 +79,9 @@ void setup() {
         data.message[i].time_slot="000000";
     }  
 
-    //objects init
+    //objects timer init
+    tm.begin((char *) cfg.wifi_ssid.c_str(),(char *) cfg.wifi_password.c_str(), (char *) cfg.ntp_server.c_str());
+
     if (!tm.align_timer()){
         log_e("initialization failed");
         while (true){

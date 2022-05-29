@@ -1,15 +1,6 @@
 /**
  #constant definition
  */
-//const char* ssid = "hyperline-11635";
-#define ssid "hyperline-11635"
-
-#define password "auj6xai6iN"
-//const char* ntpServer = "time.google.com";
-//const char* ntpServer = "pool.ntp.org";
-
-#define ntpServer "pool.ntp.org"
-
 #define RECORDING_TIME 9500
 
 /* define WRITEWAV if you would record on file .wav */
@@ -21,3 +12,9 @@ const String FILE_WAV_PREFIX = "/ft8-light_";
 const String FILE_WAV_SUFFIX = ".wav";   
 #endif
 
+/* task constant for bit check*/
+#define TSK_DECODE_BIT (1UL<<0UL) //Unsigned long bit0 set to 1
+
+/* Display related */
+#define PIN_DISPLAY_CK 18
+#define PIN_DISPLAY_DT 23

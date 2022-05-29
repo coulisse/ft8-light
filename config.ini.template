@@ -1,0 +1,13 @@
+;FT8-light config file
+;@file config.ini
+; @author Corrado Gerbaldo - IU1BOW
+;
+;This is a template file. Rename it in "config.ini", set your values
+; and put it in the root folder of your sd card.
+
+[wifi]
+ssid=foo
+password=bar
+
+[time]
+ntpServer=pool.ntp.org

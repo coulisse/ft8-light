@@ -45,11 +45,14 @@ Set the ESP32-A1S Audio Kit swithes in the following mode:
 - 4=off
 - 5=off
 
-### Setup
-*TODO*
+### Setup 
+Rename or copy file `config.ini.template` in `config.ini`; edit it with your values then copy it on the root of your **sd card**.
 
 ### Compiling
 If you are using Arduino IDE, compile with log level *info*, from menu: tools --> core debut level --> *info*
 
 ### Schema            
 *TODO*
+
+
+https://www.waveshare.com/wiki/1.5inch_OLED_Module
