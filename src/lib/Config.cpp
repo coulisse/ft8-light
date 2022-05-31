@@ -1,16 +1,19 @@
-/*
+/**
  * @file Config.cpp
  * @author Corrado Gerbaldo - IU1BOW
  * @brief configuration for APP based on SSD config file
  */
-
 #include "Config.hpp"
-
 
 Config::Config() {   
 
 }
 
+/**
+ * @brief parse line read from config file and put data in object properties
+ * @param line the record reads from file
+ * @param section (by ref) the current ini section 
+ */
 void Config::parse_line(String line, Config::ini_section* section) {
     int len;
     line.trim();
@@ -59,6 +62,9 @@ void Config::parse_line(String line, Config::ini_section* section) {
 
 }
 
+/**
+ * @brief read the config.ini and put values in object properties
+ */
 bool Config::begin() {
 
     bool rc_ok=true;
