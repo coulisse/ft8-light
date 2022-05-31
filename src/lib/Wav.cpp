@@ -1,7 +1,12 @@
-//reference: https://github.com/MhageGH/esp32_SoundRecorder
 
 #include "Wav.hpp"
 
+/**
+ * @brief Create a Wav Header 
+ * 
+ * @param header (by ref) header of wav file 
+ * @param waveDataSize size of PCM binary recorded
+ */
 void CreateWavHeader(byte* header, int waveDataSize){
 
 
@@ -79,7 +84,5 @@ void CreateWavHeader(byte* header, int waveDataSize){
   header[37] = 'a';
   header[38] = 't';
   header[39] = 'a';  
-
-
   
 }

@@ -11,9 +11,8 @@ hw_timer_t * timer = NULL;
 //TimeManager::portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-
 /**
- * @brief Define the operation to do with timer
+ * @brief increase the number of second (called one time per second)
  */
 TimeManager::clock TimeManager::intrTimer;
 void IRAM_ATTR onTimer() {
@@ -23,6 +22,7 @@ void IRAM_ATTR onTimer() {
   TimeManager::intrTimer.raised=true;
   portEXIT_CRITICAL_ISR(&timerMux);
 }
+
 //create an alias methodPtrOnTimer for link pointer to method onTimer
 void (*methodPtrOnTimer)() = &onTimer;
 
@@ -44,7 +44,7 @@ TimeManager::clock TimeManager::getClock(){
 }
 
 /**
- * @brief set clock to a number of second
+ * @brief reset clock to zero seconds
  */
 void TimeManager::resetClock() {
     intrTimer.raised=false;
@@ -52,6 +52,7 @@ void TimeManager::resetClock() {
 }
 
 /**
+ * @brief get time of day in ms
  * @return the number of milliseconds of current time
  */
 int64_t TimeManager::get_time_mills() {
@@ -71,17 +72,20 @@ TimeManager::TimeManager() {
 
 /**
  * @brief used to allign timer.
- * 
  * Get NTP time
  * Allign second to 00 or 15 or 30 or 45 
  * Allign milliseconds to 000
  * Init internal timer setting clock to 1 second 
  * 
+ * @param id WIFI SSID
+ * @param pw WIFI password
+ * @param ntpSrv ntp server
+ * @param timer_id number of the timer (default 0)
+ * 
 */
 void TimeManager::begin(char* id, char* pwd, char* ntpSrv, int timer_id) {
  //        timer = NULL;
  //        timerMux = portMUX_INITIALIZER_UNLOCKED;
-
 
     intrTimer.number=0;
     intrTimer.raised=true;
@@ -91,10 +95,13 @@ void TimeManager::begin(char* id, char* pwd, char* ntpSrv, int timer_id) {
     this->ntpServer=ntpSrv;
        
 }
+
+/**
+ * @brief //connecting to wifi and get ntp time 
+ * @return false in case of error
+ */
 bool TimeManager::align_timer() {
-    //connecting to wifi and get ntp time
-
-
+    
     if (!this->setup_ntp()) {
         log_e("Could not connect to wifi");
         return false;
@@ -129,6 +136,10 @@ bool TimeManager::align_timer() {
     timerAlarmEnable(timer);    
 };
 
+/**
+ * @brief disable wifi
+ * 
+ */
 void TimeManager::disableWiFi(){
     adc_power_off();
     WiFi.disconnect(true);  // Disconnect from the network
@@ -137,9 +148,9 @@ void TimeManager::disableWiFi(){
 
 /**
  * @brief used to set up NTP.
- * 
  * Connect to wifi 
  * Get NTP time
+ * @return false in case of error
  */
 bool TimeManager::setup_ntp(){
     byte count = 0;
@@ -165,7 +176,8 @@ bool TimeManager::setup_ntp(){
 };
 
 /**
- * @brief Print current time with format "hh:mm:ss.ms"
+ * @brief get current time 
+ * @return String with current time with format "hh:mm:ss.ms"
  */
 String TimeManager::printTime(){
     struct tm time;
@@ -179,6 +191,10 @@ String TimeManager::printTime(){
     return buffAsStdStr;
 };
 
+/**
+ * @brief get current time 
+ * @return String with current time with format "hhmmss"
+ */
 String TimeManager::get_time_hhmmss(){
     struct tm time;
     if(!getLocalTime(&time)){
