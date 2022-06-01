@@ -25,6 +25,7 @@ enum ft_phase {decode, encode, nothing};
 ft_phase phase = decode;
 U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
 Config cfg;
+
 TimeManager tm;
 AudioRecorder ar;
 shared_data data;  //working area used to sharing data between tasks

@@ -1,5 +1,8 @@
-//reference: https://github.com/MhageGH/esp32_SoundRecorder
-//reference: https://forum.arduino.cc/t/creating-a-wav-file-header/314260/4
+/**
+ * @file Wav.hpp
+ * @author reference: https://github.com/MhageGH/esp32_SoundRecorder
+ * @brief used to generate a wav header
+ */
 
 #include <Arduino.h>
 

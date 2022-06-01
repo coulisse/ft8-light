@@ -15,9 +15,6 @@
 class Config {
     public:
         Config ();
-        /**
-        * @brief read the config.ini and put values in object properties
-        */
         bool begin();  
         //WIFI SSID
         String wifi_ssid;
