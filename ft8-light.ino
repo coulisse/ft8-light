@@ -23,7 +23,9 @@
 /* Global variables and objects */
 enum ft_phase {decode, encode, nothing};
 ft_phase phase = decode;
-U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+//U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+U8G2_SSD1327_WS_128X128_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+//U8X8_SSD1327_WS_128X128_SW_I2C  u8x8(PIN_DISPLAY_CK,PIN_DISPLAY_DT,U8X8_PIN_NONE);
 Config cfg;
 
 TimeManager tm;
@@ -132,32 +134,49 @@ void setup() {
 
     Serial.begin(115200);
 
-    log_i("*********************************************");
-    log_i("                START SETUP                  ");
-    log_i("*********************************************");
-    log_v("Total heap.: %d", ESP.getHeapSize());
-    log_i("Free heap..: %d", ESP.getFreeHeap());
-    log_v("Total PSRAM: %d", ESP.getPsramSize());
-    log_v("Free PSRAM.: %d", ESP.getFreePsram());  
-
-    bool rc=cfg.begin();
-    while (!rc) {
-        //stop
-    }
-    
-    //Display Init
+    //display init
     u8g2.begin();
     u8g2.clearBuffer();					// clear the internal memory
     u8g2.setFont(u8g2_font_5x7_tf);	    // choose a suitable font
-    u8g2.drawStr(0,10,"Boot...");	    // write something to the internal memory
-    u8g2.drawStr(0,17,"Boot...");	    // write something to the internal memory
-    u8g2.sendBuffer();					// transfer internal memory to the display  
+    byte display_y=10;
+
+    log_i("*********************************************");
+    log_i("                START SETUP                  ");
+    log_i("*********************************************");
+
+    u8g2.drawStr(0,display_y,"Start setup");	    // write something to the internal memory
+    u8g2.sendBuffer();
+
+    log_v("Total heap.: %d", ESP.getHeapSize());
+    log_i("Free heap..: %d", ESP.getFreeHeap());
+    log_v("Total PSRAM: %d", ESP.getPsramSize());
+    log_i("Free PSRAM.: %d", ESP.getFreePsram());  
+
+    bool rc=cfg.begin();
+    if (!rc) {
+        log_e("configuration failed");
+        u8g2.drawStr(0,display_y+=7,"ERROR: Configuration failed!!!");
+        u8g2.sendBuffer();	        
+        while (true) {
+            //stop
+        }        
+    }
+    
+    u8g2.drawStr(0,display_y+=7,"Configuration loaded");
+    u8g2.sendBuffer();	
 
     //Audio recording init
     ar.begin();
 
+    u8g2.drawStr(0,display_y+=7,"Audio manager initialized");
+    u8g2.sendBuffer();	
+
     //init main buffer for sharing  audio recording PCM
     data.pcm_buffer = (uint8_t** )ps_malloc(400000*sizeof(uint8_t));
+
+    u8g2.drawStr(0,display_y+=7,"PSRAM buffer allocated");
+    u8g2.drawStr(0,display_y+=7,"Task initializing...");
+    u8g2.sendBuffer();	
 
     //creating decoding and recording tasks
     xEventGroup = xEventGroupCreate();
@@ -176,14 +195,24 @@ void setup() {
         data.message[i].time_slot="000000";
     }  
 
+    u8g2.drawStr(0,display_y+=7,"Message table cleared");
+    u8g2.sendBuffer();	
+
     //objects timer init
+    u8g2.drawStr(0,display_y+=7,"Time manager initialization...");
+    u8g2.sendBuffer();    
     tm.begin((char *) cfg.wifi_ssid.c_str(),(char *) cfg.wifi_password.c_str(), (char *) cfg.ntp_server.c_str());
     if (!tm.align_timer()){
-        log_e("initialization failed");
+        log_e("alligning timer failed");
+        u8g2.drawStr(0,display_y+=7,"ERROR: alligning timer failed!!!");
+        u8g2.sendBuffer();	           
         while (true){
             //stop here
         }
     }
+
+    u8g2.drawStr(0,display_y+=7,"Setup terminated");
+    u8g2.sendBuffer();	    
     log_i("*********************************************");
     log_i("                 END SETUP                   ");
     log_i("*********************************************");

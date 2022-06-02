@@ -65,6 +65,7 @@ void save_wav(const float* signal, int num_samples, int sample_rate, const char*
 // Load signal in floating point format (-1 .. +1) as a WAVE file using 16-bit signed integers.
 int load_wav(float* signal, int* num_samples, int* sample_rate, const char* path)
 {
+
     char subChunk1ID[4]; // = {'f', 'm', 't', ' '};
     uint32_t subChunk1Size; // = 16;    // 16 for PCM
     uint16_t audioFormat; // = 1;     // PCM = 1
@@ -73,7 +74,6 @@ int load_wav(float* signal, int* num_samples, int* sample_rate, const char* path
     uint32_t sampleRate;
     uint16_t blockAlign; // = numChannels * bitsPerSample / 8;
     uint32_t byteRate; // = sampleRate * blockAlign;
-
     char subChunk2ID[4]; // = {'d', 'a', 't', 'a'};
     uint32_t subChunk2Size; // = num_samples * blockAlign;
 

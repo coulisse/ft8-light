@@ -106,16 +106,18 @@ void monitor_free(monitor_t* me)
 void monitor_process(monitor_t* me, const float* frame)
 {
 
+    log_v("A0");
     // Check if we can still store more waterfall data
     if (me->wf.num_blocks >= me->wf.max_blocks)
         return;
-
+log_v("A1");
     int offset = me->wf.num_blocks * me->wf.block_stride;
     int frame_pos = 0;
-
+log_v("A2");
     // Loop over block subdivisions
     for (int time_sub = 0; time_sub < me->wf.time_osr; ++time_sub)
     {
+log_v("A3");        
         kiss_fft_scalar timedata[me->nfft];
         kiss_fft_cpx freqdata[me->nfft / 2 + 1];
         // Shift the new data into analysis frame
@@ -133,12 +135,13 @@ void monitor_process(monitor_t* me, const float* frame)
         {
             timedata[pos] = me->fft_norm * me->window[pos] * me->last_frame[pos];
         }
-
+log_v("A5");
         kiss_fftr(me->fft_cfg, timedata, freqdata);
 
         // Loop over two possible frequency bin offsets (for averaging)
         for (int freq_sub = 0; freq_sub < me->wf.freq_osr; ++freq_sub)
         {
+log_v("A5");            
             for (int bin = 0; bin < me->wf.num_bins; ++bin)
             {
                 int src_bin = (bin * me->wf.freq_osr) + freq_sub;
@@ -155,7 +158,9 @@ void monitor_process(monitor_t* me, const float* frame)
             }
         }
     }
+log_v("A6");    
     ++me->wf.num_blocks;
+log_v("A7");    
 }
 
 void monitor_reset(monitor_t* me)
@@ -214,7 +219,9 @@ int IRAM_ATTR decode_ft8(uint8_t *pcm_buffer, size_t bytes_read, int sample_rate
     for (int frame_pos = 0; frame_pos +mon.block_size <= num_samples; frame_pos +=mon.block_size)
     {
         vTaskDelay(1);
+        log_v("a");
         monitor_process(&mon, signal + frame_pos);
+        log_v("b");
     }
     log_v("after monitor loop");
     log_d( "Waterfall accumulated %d symbols",mon.wf.num_blocks);
