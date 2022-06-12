@@ -11,3 +11,7 @@ password=bar
 
 [time]
 ntpServer=pool.ntp.org
+
+[radio]
+callsign=your-callsign
+

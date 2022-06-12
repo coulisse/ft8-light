@@ -206,3 +206,20 @@ String TimeManager::get_time_hhmmss(){
     String buffAsStdStr = buff;
     return buff;    
 }
+
+
+/**
+ * @brief get current time 
+ * @return String with current time with format "mmss"
+ */
+String TimeManager::get_time_mmss(){
+    struct tm time;
+    if(!getLocalTime(&time)){
+        log_e("Could not obtain time info");
+        return "";
+    }
+    char buff[7];
+    snprintf(buff, sizeof(buff), "%02u%02u",time.tm_min, time.tm_sec);
+    String buffAsStdStr = buff;
+    return buff;    
+}

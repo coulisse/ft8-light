@@ -34,8 +34,10 @@ AudioRecorder::AudioRecorder() {
       // open in read mode
     //LOGLEVEL_AUDIOKIT = AudioKitInfo; 
 
+    #ifdef WRITEWAV 
     SD.rmdir("/recording");
     SD.mkdir("/recording");
+    #endif
 
 };
 

@@ -23,8 +23,11 @@
 /* Global variables and objects */
 enum ft_phase {decode, encode, nothing};
 ft_phase phase = decode;
-U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
-Config cfg;
+//U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+//U8G2_SSD1327_WS_128X128_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+U8G2_SSD1327_WS_128X128_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, PIN_DISPLAY_CK,PIN_DISPLAY_DT);
+//U8G2_SSD1327_WS_128X128_F_2ND_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
+Config cfg; 
 
 TimeManager tm;
 AudioRecorder ar;
@@ -89,7 +92,6 @@ void tsk_decode(void * parameters) {
 
             memcpy(lcl_pcm_buffer,&data->pcm_buffer[bytes_from],bytes_read-bytes_from);
             vTaskDelay(1);  // one tick delay (15ms) in between reads for stability 
-
             
             #ifdef WRITEWAV 
             String file_name=FILE_WAV_PATH+FILE_WAV_PREFIX+millis()+FILE_WAV_SUFFIX;
@@ -107,11 +109,10 @@ void tsk_decode(void * parameters) {
                 log_e("Could not write file");
                 vTaskDelete(NULL);
             }    
-            file.write(header, headerSize);
+            file.write(header, headerSize);                   
             file.write(lcl_pcm_buffer, bytes_read);    
             log_d("PCM Bytes: %d", bytes_read);
             file.close();  
-
             log_i ("recorded: %s", file_name_c);
 
             #endif
@@ -131,41 +132,108 @@ void tsk_decode(void * parameters) {
 void setup() {
 
     Serial.begin(115200);
+    ar.begin();        
+    //u8g2.setBusClock(4000000);
+    u8g2.setBusClock(4000000);
+    //display init
+    u8g2.begin();
+    
+    /*
+    u8g2.clearBuffer();					
+    u8g2.setFont(u8g2_font_bubble_tr);
+    u8g2.drawStr(0,40,"   FT8");	    // write something to the internal memory
+    u8g2.drawStr(0,80,"  Light");	    // write something to the internal memory
+    u8g2.drawStr(0,120," IU1BOW");	    // write something to the internal memory
+    */
+
+    u8g2.clearBuffer();					
+    u8g2.drawXBMP( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, initial_screen_bits);
+    u8g2.sendBuffer();    
+
+    delay(3000);
+
+    u8g2.clearDisplay();					
+    u8g2.setFont(u8g2_font_5x7_tf);	    
+    byte display_y=12;
+    const byte display_inc=10;
+    byte status_width = u8g2.getStrWidth(DSP_INIT_WAIT)+3;
 
     log_i("*********************************************");
     log_i("                START SETUP                  ");
     log_i("*********************************************");
+
+    u8g2.drawStr(0,display_y,"START SETUP");	    // write something to the internal memory
+    u8g2.sendBuffer();
+
+
     log_v("Total heap.: %d", ESP.getHeapSize());
     log_i("Free heap..: %d", ESP.getFreeHeap());
     log_v("Total PSRAM: %d", ESP.getPsramSize());
-    log_v("Free PSRAM.: %d", ESP.getFreePsram());  
+    log_i("Free PSRAM.: %d", ESP.getFreePsram());  
 
+    display_y+=display_inc;
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
+    u8g2.drawStr(status_width,display_y,"Load config");
+    u8g2.sendBuffer();       
+//    u8g2.print("Loading configuration");
     bool rc=cfg.begin();
-    while (!rc) {
-        //stop
+    if (!rc) {
+        log_e("configuration failed");
+        u8g2.drawStr(0,display_y,DSP_INIT_ERR);
+        u8g2.sendBuffer();	        
+        while (true) {
+            //stop
+        }        
     }
-    
-    //Display Init
-    u8g2.begin();
-    u8g2.clearBuffer();					// clear the internal memory
-    u8g2.setFont(u8g2_font_5x7_tf);	    // choose a suitable font
-    u8g2.drawStr(0,10,"Boot...");	    // write something to the internal memory
-    u8g2.drawStr(0,17,"Boot...");	    // write something to the internal memory
-    u8g2.sendBuffer();					// transfer internal memory to the display  
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);
+    u8g2.sendBuffer();	
 
     //Audio recording init
-    ar.begin();
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
+    u8g2.drawStr(status_width,display_y,"Audio mngr init");
+    u8g2.sendBuffer();	
+
+    //ar.begin();
+
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);
+    u8g2.sendBuffer();	
 
     //init main buffer for sharing  audio recording PCM
     data.pcm_buffer = (uint8_t** )ps_malloc(400000*sizeof(uint8_t));
 
-    //creating decoding and recording tasks
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);
+    u8g2.drawStr(status_width,display_y,"PSRAM buff alloc");
+    u8g2.sendBuffer();	
+
+    //creating decoding task
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
+    u8g2.drawStr(status_width,display_y,"Decode task init");
+    u8g2.sendBuffer();	    
     xEventGroup = xEventGroupCreate();
     log_v("init tsk_decode");
     xTaskCreatePinnedToCore(tsk_decode,"decoding  task",40000,&data,1,&xHandleDecode,0);  
+    delay(15000);
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);     
+
+    //creating recording tasks    
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
+    u8g2.drawStr(status_width,display_y,"Record task init");
+    u8g2.sendBuffer();	
     log_v("init tsk_record");
     xTaskCreatePinnedToCore(tsk_record,"recording task",30000,&data,1,&xHandleRecord,1); 
-    delay(7000); 
+    delay(15000); 
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);
+    u8g2.sendBuffer();	
+
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
+    u8g2.drawStr(status_width,display_y,"Clear msg table");
+    u8g2.sendBuffer();	
 
     //init table for transcoded message 
     for (byte i=0;i<MAX_MESSAGES;i++) {
@@ -173,20 +241,39 @@ void setup() {
         data.message[i].score=0;
         strncpy(data.message[i].text,"                        ",25); //TODO: replace 25
         data.message[i].time_sec=0;
-        data.message[i].time_slot="000000";
+        data.message[i].time_slot="    ";
     }  
 
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);
+    u8g2.sendBuffer();	
+
     //objects timer init
-    tm.begin((char *) cfg.wifi_ssid.c_str(),(char *) cfg.wifi_password.c_str(), (char *) cfg.ntp_server.c_str());
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
+    u8g2.drawStr(status_width,display_y,"Time mngr init");
+    u8g2.sendBuffer();    
+
+    Config::properties props;
+    props=cfg.get_props();
+    tm.begin((char *) props.wifi.ssid.c_str(),(char *) props.wifi.password.c_str(), (char *) props.ntp.server.c_str());
     if (!tm.align_timer()){
-        log_e("initialization failed");
+        log_e("alligning timer failed");
+        u8g2.drawStr(0,display_y,DSP_INIT_ERR);
+        u8g2.sendBuffer();	           
         while (true){
             //stop here
         }
     }
+    u8g2.drawStr(0,display_y,DSP_INIT_OK);
+    display_y+=display_inc;
+    display_y+=display_inc;
+    u8g2.drawStr(0,display_y,"END SETUP");
+    u8g2.sendBuffer();	    
     log_i("*********************************************");
     log_i("                 END SETUP                   ");
     log_i("*********************************************");
+
+    u8g2.clearDisplay();	
 }
 
 /**
@@ -201,7 +288,10 @@ void loop() {
       //portENTER_CRITICAL(&timerMux);
       //portENTER_CRITICAL(&tm.timerMux);
       tm.resetClock();
-      data.time_slot_tmp = tm.get_time_hhmmss();       
+      //data.time_slot_tmp = tm.get_time_hhmmss();       
+      data.time_slot_tmp = tm.get_time_mmss();  
+
+      //ar.play("/recording/test.wav");    
       
       if (phase==decode) {
         //TODO: record in a separate task
@@ -212,9 +302,36 @@ void loop() {
             log_d("%s %3d %+4.2f %4.0f ~  %s", data.message[i].time_slot, data.message[i].score, data.message[i].time_sec, data.message[i].freq , data.message[i].text);
         }
 
+        //show decoded on display
+        const byte start_element = 40;
+        byte display_y=30;
+        byte display_x=u8g2.getStrWidth((const char *) data.message[0].time_slot.c_str())+2;
+        u8g2.clearBuffer();     
+        u8g2.drawStr(0,10, "STATUS STATUS STATUS");
+        u8g2.drawHLine(0,20,DSP_MAX_WIDTH);
+        
+        for (byte i=start_element;i<MAX_MESSAGES;i++) {
+            const char * time_slot = (const char *) data.message[i].time_slot.c_str();
+            u8g2.drawStr(2,display_y, (const char *) data.message[i].time_slot.c_str());
+            u8g2.drawStr(2+display_x,display_y, data.message[i].text);
+            display_y+=10;
+        }
+    /*
+
+       display_y=DSP_MAX_HEIGHT;
+        for (byte i=MAX_MESSAGES;i>start_element;i--) {
+            const char * time_slot = (const char *) data.message[i].time_slot.c_str();
+            u8g2.drawStr(2,display_y, (const char *) data.message[i].time_slot.c_str());
+            u8g2.drawStr(2+display_x,display_y, data.message[i].text);
+            display_y-=10;
+        }
+*/
+        u8g2.sendBuffer();
+
       } else if (phase == encode) {
         //ar.play("/sample_16000_16_mono.wav");
       }
+      
       //portEXIT_CRITICAL(&tm.timerMux);
       //portEXIT_CRITICAL(&timerMux);
     } 

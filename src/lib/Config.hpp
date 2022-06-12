@@ -13,19 +13,33 @@
  * @brief parse line read from config file and put data in object properties
  */
 class Config {
+
     public:
         Config ();
         bool begin();  
-        //WIFI SSID
-        String wifi_ssid;
-        //WIFI password
-        String wifi_password;
-        //NTP server
-        String ntp_server;      
+        struct properties {
+            //wifi structure
+            struct wifi {
+                String ssid;
+                String password;
+            } wifi;
+            //ntp structure
+            struct ntp {
+                //ntp server
+                String server;
+            } ntp;
+            struct radio {
+                //callsign
+                String callsign;
+            } radio;            
+        };
+        
+        properties get_props();
 
     private:   
-        enum ini_section {wifi, time};      
-        void parse_line(String line, Config::ini_section* section);      
+        enum ini_section {wifi, time, radio};      
+        void parse_line(String line, Config::ini_section* section);  
+        properties props;        
         
 };
 

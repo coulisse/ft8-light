@@ -31,6 +31,7 @@ class TimeManager  {
             void resetClock();
             String printTime();       
             String get_time_hhmmss();
+            String get_time_mmss();
             
       private: 
             int64_t get_time_mills();

@@ -19,4 +19,16 @@ const String FILE_WAV_SUFFIX = ".wav";
 
 /* Display related pin */
 #define PIN_DISPLAY_CK 18
+//#define PIN_DISPLAY_CK 13
 #define PIN_DISPLAY_DT 23
+
+/* Display strings */
+#define DSP_INIT_WAIT "[ .. ]"
+#define DSP_INIT_OK   "[ OK ]"
+#define DSP_INIT_ERR  "[FAIL]"
+
+
+#define DSP_MAX_WIDTH 128
+#define DSP_MAX_HEIGHT 128
+
+

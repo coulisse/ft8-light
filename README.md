@@ -56,3 +56,4 @@ If you are using Arduino IDE, compile with log level *info*, from menu: tools --
 
 
 https://www.waveshare.com/wiki/1.5inch_OLED_Module
+I2C configuration 

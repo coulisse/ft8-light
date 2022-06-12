@@ -30,6 +30,9 @@ void Config::parse_line(String line, Config::ini_section* section) {
             if (line.equals("[time]")) { 
                 *section = time;
             }
+            if (line.equals("[radio]")) { 
+                *section = time;
+            }            
         } else {
             //property found
             int equal_pos=line.indexOf('=');
@@ -41,16 +44,24 @@ void Config::parse_line(String line, Config::ini_section* section) {
 
                 if (*section==wifi) {
                     if (property.equals("ssid")) {
-                        this->wifi_ssid = value;
+                        this->props.wifi.ssid=value;
                     }
                     if (property.equals("password")) {
-                        this->wifi_password = value;
+                        this->props.wifi.password=value;
                     }
                 }
 
                 if (*section==time) {              
                     if (property.equals("ntpServer")) {
-                        this->ntp_server = value;
+                        this->props.ntp.server=value;
+                    }
+                }
+
+                if (*section==radio) {              
+                    if (property.equals("callsign")) {
+                        String call=value;
+                        call.toUpperCase();
+                        this->props.radio.callsign=call;
                     }
                 }
 
@@ -84,6 +95,10 @@ bool Config::begin() {
     
     file.close(); //close file
     return rc_ok;
+}
+
+Config::properties Config::get_props() {
+    return this->props;
 }
 
 
