@@ -24,10 +24,16 @@
 enum ft_phase {decode, encode, nothing};
 ft_phase phase = decode;
 //U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+<<<<<<< HEAD
 //U8G2_SSD1327_WS_128X128_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
 U8G2_SSD1327_WS_128X128_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, PIN_DISPLAY_CK,PIN_DISPLAY_DT);
 //U8G2_SSD1327_WS_128X128_F_2ND_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 Config cfg; 
+=======
+U8G2_SSD1327_WS_128X128_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ PIN_DISPLAY_CK, /* data=*/ PIN_DISPLAY_DT, /* reset=*/ U8X8_PIN_NONE);   // Adafruit Feather M0 Basic Proto + FeatherWing OLED
+//U8X8_SSD1327_WS_128X128_SW_I2C  u8x8(PIN_DISPLAY_CK,PIN_DISPLAY_DT,U8X8_PIN_NONE);
+Config cfg;
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
 
 TimeManager tm;
 AudioRecorder ar;
@@ -158,19 +164,35 @@ void setup() {
     const byte display_inc=10;
     byte status_width = u8g2.getStrWidth(DSP_INIT_WAIT)+3;
 
+<<<<<<< HEAD
+=======
+    //display init
+    u8g2.begin();
+    u8g2.clearBuffer();					// clear the internal memory
+    u8g2.setFont(u8g2_font_5x7_tf);	    // choose a suitable font
+    byte display_y=10;
+
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
     log_i("*********************************************");
     log_i("                START SETUP                  ");
     log_i("*********************************************");
 
+<<<<<<< HEAD
     u8g2.drawStr(0,display_y,"START SETUP");	    // write something to the internal memory
     u8g2.sendBuffer();
 
 
+=======
+    u8g2.drawStr(0,display_y,"Start setup");	    // write something to the internal memory
+    u8g2.sendBuffer();
+
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
     log_v("Total heap.: %d", ESP.getHeapSize());
     log_i("Free heap..: %d", ESP.getFreeHeap());
     log_v("Total PSRAM: %d", ESP.getPsramSize());
     log_i("Free PSRAM.: %d", ESP.getFreePsram());  
 
+<<<<<<< HEAD
     display_y+=display_inc;
     display_y+=display_inc;
     u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
@@ -181,12 +203,23 @@ void setup() {
     if (!rc) {
         log_e("configuration failed");
         u8g2.drawStr(0,display_y,DSP_INIT_ERR);
+=======
+    bool rc=cfg.begin();
+    if (!rc) {
+        log_e("configuration failed");
+        u8g2.drawStr(0,display_y+=7,"ERROR: Configuration failed!!!");
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
         u8g2.sendBuffer();	        
         while (true) {
             //stop
         }        
     }
+<<<<<<< HEAD
     u8g2.drawStr(0,display_y,DSP_INIT_OK);
+=======
+    
+    u8g2.drawStr(0,display_y+=7,"Configuration loaded");
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
     u8g2.sendBuffer();	
 
     //Audio recording init
@@ -200,9 +233,13 @@ void setup() {
     u8g2.drawStr(0,display_y,DSP_INIT_OK);
     u8g2.sendBuffer();	
 
+    u8g2.drawStr(0,display_y+=7,"Audio manager initialized");
+    u8g2.sendBuffer();	
+
     //init main buffer for sharing  audio recording PCM
     data.pcm_buffer = (uint8_t** )ps_malloc(400000*sizeof(uint8_t));
 
+<<<<<<< HEAD
     display_y+=display_inc;
     u8g2.drawStr(0,display_y,DSP_INIT_OK);
     u8g2.drawStr(status_width,display_y,"PSRAM buff alloc");
@@ -213,6 +250,13 @@ void setup() {
     u8g2.drawStr(0,display_y,DSP_INIT_WAIT);
     u8g2.drawStr(status_width,display_y,"Decode task init");
     u8g2.sendBuffer();	    
+=======
+    u8g2.drawStr(0,display_y+=7,"PSRAM buffer allocated");
+    u8g2.drawStr(0,display_y+=7,"Task initializing...");
+    u8g2.sendBuffer();	
+
+    //creating decoding and recording tasks
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
     xEventGroup = xEventGroupCreate();
     log_v("init tsk_decode");
     xTaskCreatePinnedToCore(tsk_decode,"decoding  task",40000,&data,1,&xHandleDecode,0);  
@@ -244,6 +288,7 @@ void setup() {
         data.message[i].time_slot="    ";
     }  
 
+<<<<<<< HEAD
     u8g2.drawStr(0,display_y,DSP_INIT_OK);
     u8g2.sendBuffer();	
 
@@ -259,15 +304,32 @@ void setup() {
     if (!tm.align_timer()){
         log_e("alligning timer failed");
         u8g2.drawStr(0,display_y,DSP_INIT_ERR);
+=======
+    u8g2.drawStr(0,display_y+=7,"Message table cleared");
+    u8g2.sendBuffer();	
+
+    //objects timer init
+    u8g2.drawStr(0,display_y+=7,"Time manager initialization...");
+    u8g2.sendBuffer();    
+    tm.begin((char *) cfg.wifi_ssid.c_str(),(char *) cfg.wifi_password.c_str(), (char *) cfg.ntp_server.c_str());
+    if (!tm.align_timer()){
+        log_e("alligning timer failed");
+        u8g2.drawStr(0,display_y+=7,"ERROR: alligning timer failed!!!");
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
         u8g2.sendBuffer();	           
         while (true){
             //stop here
         }
     }
+<<<<<<< HEAD
     u8g2.drawStr(0,display_y,DSP_INIT_OK);
     display_y+=display_inc;
     display_y+=display_inc;
     u8g2.drawStr(0,display_y,"END SETUP");
+=======
+
+    u8g2.drawStr(0,display_y+=7,"Setup terminated");
+>>>>>>> bc7d4d692ccd683162b944d2d27b7a418ae0c2eb
     u8g2.sendBuffer();	    
     log_i("*********************************************");
     log_i("                 END SETUP                   ");
